@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "modal-signal-handler-bug",
+  "prompt": "My Lightning v2 Modal component is supposed to notify its parent when it closes so the parent can hide it and update its own state, but the parent's handler never seems to fire. Here are the modal component and the relevant parent code — what's wrong and how do I fix it?",
+  "assertions": [
+    "Identifies that this.signal() requires the parent to declare a signals (or passSignals) map at the template site where the child is instantiated, and that the Modal entry in Parent's template has no such map",
+    "Provides a concrete fix that adds a signals map (e.g. signals: { modalClosed: '_handleModalClosed' }) to the Modal template entry in Parent",
+    "Recognizes that the $modalClosed() method inside the Modal state is unrelated dead code because $-prefixed names are the fireAncestors() convention, not the signal() convention, and Modal never calls fireAncestors",
+    "Does not claim the bug is purely a _handleModalClosed vs $modalClosed naming mismatch without also identifying the missing signals map, since renaming alone would not fix the bug",
+    "Does not misattribute the bug to something unrelated to Lightning's signal-wiring contract, like a DOM-style addEventListener pattern or a focus-delegation issue, as the primary cause"
+  ]
+}

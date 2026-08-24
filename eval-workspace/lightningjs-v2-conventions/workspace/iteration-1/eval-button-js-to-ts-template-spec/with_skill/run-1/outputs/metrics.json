@@ -1,0 +1,13 @@
+{
+  "tool_calls": {
+    "Read": 5,
+    "Bash": 2,
+    "Write": 4
+  },
+  "total_tool_calls": 11,
+  "total_steps": 6,
+  "files_created": ["Button.ts"],
+  "errors_encountered": 0,
+  "output_chars": 5944,
+  "transcript_chars": 6214
+}

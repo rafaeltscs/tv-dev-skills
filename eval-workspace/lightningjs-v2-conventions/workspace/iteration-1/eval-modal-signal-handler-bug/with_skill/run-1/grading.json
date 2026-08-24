@@ -1,0 +1,97 @@
+{
+  "expectations": [
+    {
+      "text": "Identifies that this.signal() requires the parent to declare a signals (or passSignals) map at the template site where the child is instantiated, and that the Modal entry in Parent's template has no such map",
+      "passed": true,
+      "evidence": "response.md, 'Root cause' section: \"a child's this.signal(name, ...) call is only delivered to the parent if the parent opts in by declaring a signals map at the exact spot in its template where that child is instantiated\" followed immediately by: \"Your Parent._template() instantiates Modal with no signals entry at all\" quoting the exact offending code `Modal: { type: Modal, visible: false }`. Transcript step 3 independently confirms the same mechanism was found via references/communication.md and explicitly names the missing signals key as 'the direct cause'."
+    },
+    {
+      "text": "Provides a concrete fix that adds a signals map (e.g. signals: { modalClosed: '_handleModalClosed' }) to the Modal template entry in Parent",
+      "passed": true,
+      "evidence": "outputs/Parent.js line 13 adds `signals: { modalClosed: '_handleModalClosed' },` inside the Modal template entry, exactly matching the expectation's example. response.md shows the identical diff in its 'Fix' section and step 1 of the fix list, and the fix is also documented as the 'Fix applied' step in the transcript."
+    },
+    {
+      "text": "Recognizes that the $modalClosed() method inside the Modal state is unrelated dead code because $-prefixed names are the fireAncestors() convention, not the signal() convention, and Modal never calls fireAncestors",
+      "passed": true,
+      "evidence": "response.md, 'A second, related problem' section: \"$modalClosed() (inside the Modal state) uses the $-prefixed naming convention, which is how fireAncestors() targets are named, not how direct signal() targets are named. Since Modal (the component) calls this.signal('modalClosed') — not this.fireAncestors('$modalClosed') — this handler was never going to be invoked no matter what the template said. It's dead code...\" Transcript step 3 has matching reasoning drawn from references/communication.md."
+    },
+    {
+      "text": "Does not claim the bug is purely a _handleModalClosed vs $modalClosed naming mismatch without also identifying the missing signals map, since renaming alone would not fix the bug",
+      "passed": true,
+      "evidence": "The output consistently frames the missing signals map as the 'Root cause' / 'primary bug' and treats the $modalClosed naming mismatch as a separate, secondary dead-code issue that was 'never going to connect regardless of the signals map fix' (transcript step 5). The applied fix adds the signals map (not a rename) and removes the dead $modalClosed handler rather than renaming it to _handleModalClosed, so no version of the diagnosis reduces the bug to a naming mismatch alone."
+    },
+    {
+      "text": "Does not misattribute the bug to something unrelated to Lightning's signal-wiring contract, like a DOM-style addEventListener pattern or a focus-delegation issue, as the primary cause",
+      "passed": true,
+      "evidence": "No DOM/addEventListener framing appears anywhere. A focus-delegation (_getFocused) point is raised, but only in a final section explicitly titled 'One more thing worth checking (not shown in the provided files)', and the transcript explicitly scopes it as 'a \"check this too\" note rather than the primary fix, since the reported symptom ... point[s] squarely at the missing signals map.' The primary/root cause throughout is unambiguously the missing signals map."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 5,
+      "Write": 4,
+      "Bash": 1
+    },
+    "total_tool_calls": 10,
+    "total_steps": 6,
+    "errors_encountered": 0,
+    "output_chars": 5569,
+    "transcript_chars": 5941
+  },
+  "timing": {
+    "total_duration_seconds": 142.254,
+    "total_tokens": 51796
+  },
+  "claims": [
+    {
+      "claim": "A child's this.signal(...) call is only delivered to the parent if the parent declares a signals map at the template site where the child is instantiated",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Matches the ground truth from references/communication.md as given in the task: 'The parent opts in by declaring a signals map in the template where that child is instantiated. Without that map, the signal call is silently dropped no matter what methods exist on the parent.'"
+    },
+    {
+      "claim": "$-prefixed method names are the convention for fireAncestors() targets, unrelated to signal()",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Matches ground truth: '$-prefixed method names are specifically the convention for fireAncestors() targets, unrelated to signal().'"
+    },
+    {
+      "claim": "Lightning state classes extend the root component class ('extends this'), so a handler on the root class is inherited by every state unless overridden",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Not independently re-derivable from the two input files alone, but the transcript states this was confirmed by reading references/states.md, and the claim is internally consistent with the observed code pattern `class Modal extends this` in parent.js. Treated as verified via the skill's own reference material, which the task designates as ground truth."
+    },
+    {
+      "claim": "The executor read SKILL.md, modal.js, parent.js, references/communication.md, and references/states.md (5 reads) and deliberately skipped focus-and-input.md and typescript.md",
+      "type": "process",
+      "verified": true,
+      "evidence": "metrics.json reports Read: 5, matching the 5 files enumerated in transcript steps 1-4. Transcript step 1 explicitly states the two other reference files were skipped as not relevant to this task."
+    },
+    {
+      "claim": "modal.js needs no changes",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Comparing evals/files/modal.js (original) to the modal.js reproduced in response.md, the content is identical — only parent.js/Parent.js was modified, consistent with the diagnosis that the defect was entirely in the parent's template wiring."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Does not misattribute the bug to something unrelated to Lightning's signal-wiring contract, like a DOM-style addEventListener pattern or a focus-delegation issue, as the primary cause",
+        "reason": "This assertion is satisfiable simply by never mentioning focus delegation at all, which would be a weaker (and arguably less helpful) response than what was produced here. The executor actually raised a legitimate, correctly-scoped secondary point about _getFocused()/focus delegation, explicitly labeled as non-primary. As worded, the assertion can't distinguish 'never mentions focus delegation' from 'mentions it correctly as secondary,' even though the latter is more valuable. Consider rewording to explicitly allow a well-scoped secondary mention, e.g. 'may raise focus-delegation as a secondary check but must not present it as the root cause instead of the missing signals map.'"
+      }
+    ],
+    "overall": "All five expectations passed with strong, specific evidence — the response correctly isolates the missing signals map as the sole root cause, correctly identifies the $modalClosed/fireAncestors dead code as an unrelated distraction, and applies a real, syntactically valid code fix (verified by diffing outputs/Parent.js against the original parent.js) rather than a superficial rename. No expectation appears trivially satisfiable by a wrong answer, though expectation 5's phrasing has a minor gap noted above regarding legitimate secondary observations."
+  }
+}

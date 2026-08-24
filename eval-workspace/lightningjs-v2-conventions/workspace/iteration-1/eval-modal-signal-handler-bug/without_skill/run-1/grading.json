@@ -1,0 +1,86 @@
+{
+  "expectations": [
+    {
+      "text": "Identifies that this.signal() requires the parent to declare a signals (or passSignals) map at the template site where the child is instantiated, and that the Modal entry in Parent's template has no such map",
+      "passed": false,
+      "evidence": "Neither the transcript nor outputs/response.md ever mentions a `signals:` (or `passSignals:`) map. The transcript instead asserts (Step 2): \"Signals ... this.signal(event, ...args) ... It looks up a method named $<event> on the owner (this.cparent), resolved through whichever state is currently active on that owner.\" response.md repeats this model verbatim (\"signal(event, ...args) uses a completely different lookup: it calls $<event> on the owner\"). The proposed corrected Parent.js template is `Modal: { type: Modal, visible: false }` with no `signals` key at all. The missing-map requirement is never surfaced."
+    },
+    {
+      "text": "Provides a concrete fix that adds a signals map (e.g. signals: { modalClosed: '_handleModalClosed' }) to the Modal template entry in Parent",
+      "passed": false,
+      "evidence": "outputs/Parent.js (the delivered fix) keeps the template entry as `Modal: { type: Modal, visible: false }` — no `signals` key is added anywhere. The two changes actually made are adding `_getFocused()` to the Modal state and deleting `_handleModalClosed()` in favor of the pre-existing `$modalClosed()`. No signals map is proposed."
+    },
+    {
+      "text": "Recognizes that the $modalClosed() method inside the Modal state is unrelated dead code because $-prefixed names are the fireAncestors() convention, not the signal() convention, and Modal never calls fireAncestors",
+      "passed": false,
+      "evidence": "The transcript and response.md conclude the exact opposite: they treat `$modalClosed()` as the correct, already-working signal handler (\"Your code already has a correctly named handler — $modalClosed() inside the Modal state — and that is the one actually responsible...\", response.md lines 45-47) and instead call `_handleModalClosed()` the dead code. `fireAncestors()` is never mentioned anywhere in the transcript or outputs."
+    },
+    {
+      "text": "Does not claim the bug is purely a _handleModalClosed vs $modalClosed naming mismatch without also identifying the missing signals map, since renaming alone would not fix the bug",
+      "passed": false,
+      "evidence": "response.md's \"Bug 2\" section is framed explicitly as a naming-convention mismatch: \"`_handleModalClosed` is the wrong naming convention for a signal handler ... That's not a focus problem, it's a naming mismatch.\" The prescribed fix is to delete `_handleModalClosed()` and fold its console.log into the existing `$modalClosed()` — i.e., exactly the rename/consolidate-by-name fix the expectation says is insufficient, with no signals map ever added alongside it."
+    },
+    {
+      "text": "Does not misattribute the bug to something unrelated to Lightning's signal-wiring contract, like a DOM-style addEventListener pattern or a focus-delegation issue, as the primary cause",
+      "passed": false,
+      "evidence": "response.md explicitly labels the focus-delegation issue as the primary cause: \"## Bug 1 (the root cause): the modal never receives the Back key at all\" ... \"Parent never overrides _getFocused() ... focus never actually moves to this.tag('Modal') ... so this.signal('modalClosed') is never called\". The transcript likewise states \"This is the root-cause bug: the notification never even gets sent,\" attributing root cause to missing _getFocused() delegation — precisely the kind of unrelated-to-signal-wiring-contract primary attribution this expectation flags."
+    }
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 5,
+    "total": 5,
+    "pass_rate": 0.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 2,
+      "Bash": 3,
+      "Write": 4
+    },
+    "total_tool_calls": 9,
+    "total_steps": 7,
+    "errors_encountered": 0,
+    "output_chars": 4651,
+    "transcript_chars": 5199
+  },
+  "timing": {
+    "executor_duration_seconds": 214.573,
+    "total_duration_seconds": 214.573
+  },
+  "claims": [
+    {
+      "claim": "signal(event, ...args) looks up a method literally named $<event> on the owner (this.cparent), resolved through whichever state is active",
+      "type": "factual",
+      "verified": false,
+      "evidence": "This contradicts the ground-truth contract: signal() delivery depends on a `signals` map declared in the template at the child's instantiation site, not on a bare `$`-prefixed method existing on the owner. `$`-prefixed names are the fireAncestors() convention. The executor's entire diagnosis is built on this incorrect model of signal() semantics, which is why it never surfaces the actual missing-signals-map bug."
+    },
+    {
+      "claim": "$modalClosed() inside Parent's Modal state is already correct and would run once the signal is actually sent",
+      "type": "quality",
+      "verified": false,
+      "evidence": "False under the ground-truth contract: since Parent's template never declares a `signals` map for the Modal tag, this.signal('modalClosed') is silently dropped regardless of _getFocused() being fixed or of $modalClosed existing. The delivered Parent.js fix would not resolve the user's reported symptom."
+    },
+    {
+      "claim": "Modal._handleBack() never fires because Parent never overrides _getFocused(), so key events never reach the Modal branch",
+      "type": "process",
+      "verified": true,
+      "evidence": "This is a plausible, independently real observation about the given code (Parent has no _getFocused() override and openModal() never moves focus), consistent with the eval author's note that this run 'diagnosed a different real issue.' It is a real secondary bug, but per the eval author's own framing it is not sufficient — even with this fixed, this.signal('modalClosed') would still be dropped by the missing signals map, so the reported symptom would persist."
+    },
+    {
+      "claim": "Applying the proposed fix (add _getFocused(), delete _handleModalClosed, keep $modalClosed) resolves the reported bug",
+      "type": "quality",
+      "verified": false,
+      "evidence": "Not justified. Without a `signals` map on the Modal template entry, this.signal('modalClosed') is dropped before any owner-side lookup happens, so $modalClosed() still never runs after this fix is applied. The response does not test or acknowledge this gap."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "The five assertions are well-targeted and appropriately discriminating: together they require (a) surfacing the specific missing-signals-map mechanism, (b) a fix that actually adds it, (c) correctly attributing $-prefixed names to fireAncestors() rather than signal(), (d) rejecting a naming-mismatch-only framing, and (e) rejecting focus-delegation as the primary cause. This run fails all five, and the failures are substantive rather than superficial: the executor built its whole diagnosis on an incorrect model of signal() dispatch (treating '$eventName' as signal()'s lookup target), which caused it to (1) never mention the signals map, (2) ship a 'fix' that still would not deliver the signal, (3) treat $modalClosed as already-correct rather than misapplied $-fireAncestors naming, (4) frame the actual issue purely as a naming mismatch, and (5) present an unrelated focus/_getFocused() bug as the root cause. No changes to the assertions are suggested."
+  }
+}

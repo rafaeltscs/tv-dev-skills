@@ -1,0 +1,94 @@
+{
+  "expectations": [
+    {
+      "text": "Defines a TypeScript TemplateSpec type/interface (e.g. extends Lightning.Component.TemplateSpec) rather than typing the whole class as any",
+      "passed": true,
+      "evidence": "Button.ts lines 9-19: `export interface ButtonTemplateSpec extends Lightning.Component.TemplateSpec { Background: { color: number }; Label: { text: { text: string; fontSize: number } }; }`. The class extends `Lightning.Component<ButtonTemplateSpec>` (line 25) and `static _template()` is annotated to return `Lightning.Component.Template<ButtonTemplateSpec>` (line 34), so the interface is actually wired into the class rather than being decorative. No `any` appears anywhere in the file (grep for `any` returned zero matches)."
+    },
+    {
+      "text": "Template child refs (Background, Label) use PascalCase and are distinguished from camelCase properties (onEnter, label) per Lightning's TS conventions",
+      "passed": true,
+      "evidence": "Interface children `Background`/`Label` (Button.ts lines 10, 13) and the class's typed ref fields `readonly Background`/`readonly Label` (lines 31-32) are PascalCase, matching the original JS ref names (`this.tag('Background')`, `this.tag('Label')`). The component's own API surface, `set onEnter(cb)` (line 56) and `set label(value)` (line 60), stays camelCase. This mirrors the naming split documented in the skill's own reference/typescript.md ('Properties: lower-case keys... Children: upper-case keys')."
+    },
+    {
+      "text": "The onEnter callback prop has a real function type (e.g. () => void), not any",
+      "passed": true,
+      "evidence": "Line 22: `export type ButtonOnEnterCallback = () => void;`. Applied to the private backing field (`private _onEnter: ButtonOnEnterCallback | null = null;`, line 28) and the setter parameter (`set onEnter(cb: ButtonOnEnterCallback | null)`, line 56) — a real, callable function type, not `any`."
+    },
+    {
+      "text": "Uses getByRef() (or another typed accessor) rather than untyped tag() calls for accessing typed children",
+      "passed": true,
+      "evidence": "Lines 31-32: `readonly Background = this.getByRef('Background')!;` and `readonly Label = this.getByRef('Label')!;`, then used at every access site (`this.Background.patch(...)` in `_focus`/`_unfocus`, `this.Label.patch(...)` in the `label` setter). A grep of the file for `tag(` found zero matches — every previous `this.tag('X')` call from the original JS was replaced."
+    },
+    {
+      "text": "The resulting file is valid TypeScript syntax (.ts extension, class property type annotations, no leftover untyped any on the public props)",
+      "passed": true,
+      "evidence": "File is `outputs/Button.ts`. Braces/parens balance and the class body reads as syntactically well-formed TS: import, interface, type alias, a class with `extends`/`implements`, typed fields (`private _onEnter: ButtonOnEnterCallback | null`), typed setter parameters (`cb: ButtonOnEnterCallback | null`, `value: string`), and `override` on all five overridden members (`_template`, `_init`, `_focus`, `_unfocus`, `_handleEnter`). No `any` appears anywhere. Note: no `tsc`/`node` toolchain was available in this environment to run an actual compile (neither `tsc` nor `node` was found on PATH), so this is a structural/visual syntax check rather than a verified compiler pass — the `@lightningjs/core` types (`getByRef`, `ImplementTemplateSpec`) were not installed to type-check against either."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 1,
+      "Bash": 1,
+      "Write": 4
+    },
+    "total_tool_calls": 6,
+    "total_steps": 6,
+    "errors_encountered": 0,
+    "output_chars": 4483,
+    "transcript_chars": 4084
+  },
+  "timing": {
+    "executor_duration_seconds": 97.958,
+    "total_duration_seconds": 97.958
+  },
+  "claims": [
+    {
+      "claim": "The class implements Lightning.Component.ImplementTemplateSpec<ButtonTemplateSpec> in addition to extending Lightning.Component<ButtonTemplateSpec>",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Button.ts lines 24-27."
+    },
+    {
+      "claim": "No runtime behavior was changed — only types, `override` modifiers, and the tag()->getByRef() switch were added",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Side-by-side with button.js: the template tree, colors (0xff2b2b2b / 0xff4b9fff), _init/_focus/_unfocus/_handleEnter logic, and the onEnter-callback-guard (`if (this._onEnter) this._onEnter();`) are byte-for-byte the same as the original JS; only type annotations, the interface/type alias, `override`, and the ref-access mechanism changed."
+    },
+    {
+      "claim": "`fontSize` was included in the Label text template-spec type even though no setter touches it directly",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Button.ts line 16: `fontSize: number;` inside `Label.text`, matching the literal `fontSize: 28` in `_template()` (line 47); no setter in the class writes `fontSize`, consistent with the transcript's stated assumption."
+    },
+    {
+      "claim": "The chosen `getByRef`/`ImplementTemplateSpec` pattern matches idiomatic Lightning TS usage",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Cross-checked against this repo's own skill reference at skills/lightningjs-v2-conventions/references/typescript.md, whose 'Template Specs — the core pattern' section shows the identical shape: `extends Lightning.Component<T> implements Lightning.Component.ImplementTemplateSpec<T>`, `static override _template(): Lightning.Component.Template<T>`, and `private _Label = this.getByRef('Label')!;` for a ref that's always present. The submission's structure lines up almost exactly with that reference example, down to using `!` for a ref known to exist from `_template()`."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "This is the 'without_skill' baseline, and it already produces output that matches the skill's own reference/typescript.md example almost line-for-line (interface extending TemplateSpec, extends+implements ImplementTemplateSpec, getByRef with `!` for a permanent ref, `override` on lifecycle hooks). That suggests the model already has this idiomatic Lightning-TS pattern from general/pretraining knowledge for a component this simple, so this particular eval item may not strongly discriminate 'has the skill' from 'doesn't have the skill' — worth checking whether the with_skill run actually differs in any material way, or comparing against a harder component (e.g. one with a Component-typed child, an EventMap/SignalMap, or a Loose spec) where the skill's guidance is more likely to matter."
+      },
+      {
+        "assertion": "The resulting file is valid TypeScript syntax (.ts extension, class property type annotations, no leftover untyped any on the public props)",
+        "reason": "This was graded by visual/structural inspection only — no `tsc`/`node` toolchain was available in this grading environment to actually type-check the file against real `@lightningjs/core` type declarations. A subtly wrong use of `ImplementTemplateSpec` or `getByRef`'s generic signature would pass this assertion today. If a real compile pass is feasible in the eval harness (installing `@lightningjs/core` and running `tsc --noEmit`), that would make this assertion meaningfully stronger and catch cases where the model's typing is plausible-looking but doesn't actually compile."
+      }
+    ],
+    "overall": "All 5 expectations pass with concrete, non-superficial evidence (real type aliases, real getByRef usage, no `any`, override on every overridden member). The main caveat is that expectation 5 ('valid TypeScript syntax') could only be checked structurally, not via an actual compiler run, and the baseline's near-textbook-perfect output (matching the skill's own reference file) raises a question about whether this specific button-conversion prompt is a strong discriminator for the skill's value versus a harder component."
+  }
+}

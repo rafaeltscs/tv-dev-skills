@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "button-js-to-ts-template-spec",
+  "prompt": "Can you convert this Lightning v2 JavaScript Button component to TypeScript? I want real typing on the template refs and props, not just slapping `any` everywhere — the `label` setter and `onEnter` callback prop should be properly typed too. Here's the file.",
+  "assertions": [
+    "Defines a TypeScript TemplateSpec type/interface (e.g. extends Lightning.Component.TemplateSpec) rather than typing the whole class as any",
+    "Template child refs (Background, Label) use PascalCase and are distinguished from camelCase properties (onEnter, label) per Lightning's TS conventions",
+    "The onEnter callback prop has a real function type (e.g. () => void), not any",
+    "Uses getByRef() (or another typed accessor) rather than untyped tag() calls for accessing typed children",
+    "The resulting file is valid TypeScript syntax (.ts extension, class property type annotations, no leftover untyped any on the public props)"
+  ]
+}

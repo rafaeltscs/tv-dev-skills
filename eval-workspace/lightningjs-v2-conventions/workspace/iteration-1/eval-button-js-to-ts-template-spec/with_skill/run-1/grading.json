@@ -1,0 +1,94 @@
+{
+  "expectations": [
+    {
+      "text": "Defines a TypeScript TemplateSpec type/interface (e.g. extends Lightning.Component.TemplateSpec) rather than typing the whole class as any",
+      "passed": true,
+      "evidence": "outputs/Button.ts lines 8-16 define `export interface ButtonTemplateSpec extends Lightning.Component.TemplateSpec { label: string; onEnter: (() => void) | null; Background: object; Label: object; }`. The class then wires it via `extends Lightning.Component<ButtonTemplateSpec> implements Lightning.Component.ImplementTemplateSpec<ButtonTemplateSpec>` (lines 18-21). `TemplateSpecLoose` (the any-like opt-out) is not used, and no property or method is typed `any`."
+    },
+    {
+      "text": "Template child refs (Background, Label) use PascalCase and are distinguished from camelCase properties (onEnter, label) per Lightning's TS conventions",
+      "passed": true,
+      "evidence": "In the ButtonTemplateSpec interface, children are declared as `Background: object;` and `Label: object;` (PascalCase), while properties are `label: string;` and `onEnter: (() => void) | null;` (camelCase) -- matching the convention documented in references/components-and-templates.md ('keys starting with an uppercase letter are children') and references/typescript.md's example interface. The original button.js already used this casing for its tag names, and the executor preserved it rather than renaming anything."
+    },
+    {
+      "text": "The onEnter callback prop has a real function type (e.g. () => void), not any",
+      "passed": true,
+      "evidence": "Declared as `onEnter: (() => void) | null;` in the interface (line 12) and implemented as `get onEnter(): (() => void) | null { return this._onEnter; }` / `set onEnter(cb: (() => void) | null) { this._onEnter = cb; }` (lines 53-59). No `any` appears anywhere in the file (verified via grep -- zero matches)."
+    },
+    {
+      "text": "Uses getByRef() (or another typed accessor) rather than untyped tag() calls for accessing typed children",
+      "passed": true,
+      "evidence": "Lines 28-29: `private _Background = this.getByRef('Background')!;` and `private _Label = this.getByRef('Label')!;`, used thereafter in `_focus`/`_unfocus`/`set label`. The original's `this.tag('Background')` / `this.tag('Label')` calls (button.js lines 31, 35, 39) do not appear anywhere in the output -- confirmed via inspection, no `.tag(` calls remain."
+    },
+    {
+      "text": "The resulting file is valid TypeScript syntax (.ts extension, class property type annotations, no leftover untyped any on the public props)",
+      "passed": true,
+      "evidence": "Output file is outputs/Button.ts. Class fields carry explicit annotations (`private _onEnter: (() => void) | null = null;`), method return types are annotated (`: void`, `: (() => void) | null`), and the template method is typed `Lightning.Component.Template<ButtonTemplateSpec>`. Manual inspection shows balanced braces/parens and syntactically well-formed TS; grep confirms no `any` token anywhere in the file. Note: this could not be confirmed by actually running `tsc` -- no Node/npm/tsc toolchain or `@lightningjs/core` package is available in this sandbox (the transcript itself notes the same limitation: 'No test runner or tsc was available in this skills repo... checked by hand'), so the verdict rests on manual syntax/type review rather than a compiler run."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 5,
+      "Bash": 2,
+      "Write": 4
+    },
+    "total_tool_calls": 11,
+    "total_steps": 6,
+    "errors_encountered": 0,
+    "output_chars": 5944,
+    "transcript_chars": 6214
+  },
+  "timing": {
+    "total_duration_seconds": 154.522,
+    "total_tokens": 57191
+  },
+  "claims": [
+    {
+      "claim": "The original button.js only had setters for `label` and `onEnter`, with no getters, meaning reading `button.label` back would silently return undefined",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Confirmed against skills/lightningjs-v2-conventions/evals/files/button.js: only `set onEnter(cb)` (line 26) and `set label(value)` (line 30) exist; there is no `get label()` or `get onEnter()`."
+    },
+    {
+      "claim": "`_handleEnter()` should not carry the `override` keyword because it is picked up by Lightning's key-dispatch naming convention rather than being a declared method on the Lightning.Component base class",
+      "type": "process",
+      "verified": true,
+      "evidence": "references/focus-and-input.md documents that the 'Handle phase' searches for `_handle{KeyName}()` by name convention (lines 95-97) and its checklist separately lists `_handleEnter()` as an action-key convention (line 125), consistent with it not being a literal base-class override."
+    },
+    {
+      "claim": "The conversion introduces no observable behavior change other than making `label`/`onEnter` genuinely readable",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Diffing outputs/Button.ts against button.js: same default template dimensions/colors (300x80, 0xff2b2b2b / 0xff4b9fff), same `_init` reset of onEnter to null, same patch calls in `_focus`/`_unfocus`/`set label`, same `_handleEnter` guard logic. The only additions are the two getters and type annotations, which is an additive, non-breaking change as claimed."
+    },
+    {
+      "claim": "Background/Label are children created in _template() and never removed, justifying the class-field + `!` pattern over a getter-per-access pattern",
+      "type": "quality",
+      "verified": true,
+      "evidence": "button.js's `_template()` (and the converted Button.ts's) always includes both `Background` and `Label` unconditionally with no code path that removes them, matching the rule of thumb in references/typescript.md ('Child is created in _template() and never removed -> assign once as a class field with !')."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": ["No tsc/Node toolchain was available to compile-check the result; the executor verified types by hand against the reference docs instead of compiling (transcript Step 10)."]
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "The resulting file is valid TypeScript syntax (.ts extension, class property type annotations, no leftover untyped any on the public props)",
+        "reason": "Neither the executor nor this grader had access to tsc/Node/@lightningjs/core type definitions in this environment, so 'valid TypeScript syntax' was verified by manual reading rather than an actual compile. This assertion is currently unfalsifiable in a rigorous sense for any answer that merely looks plausible -- consider having the eval harness vendor a minimal tsconfig + @lightningjs/core type stubs (or at least the public Lightning.Component type surface) so this expectation can be checked with a real `tsc --noEmit` run rather than eyeballing."
+      },
+      {
+        "reason": "No expectation checks that the converted component preserves the original's runtime behavior (same default color/size/text, same _focus/_unfocus/_handleEnter logic). The executor got this right, but a subtly wrong conversion (e.g. swapped focus colors, dropped the _handleEnter guard) would satisfy all five current typing-focused assertions while being a functionally broken conversion. Consider adding a behavior-preservation assertion alongside the typing ones."
+      }
+    ],
+    "overall": "All five expectations pass with genuine, specific evidence -- the output is a faithful, idiomatic Template Spec conversion that mirrors the skill's own documented patterns (PascalCase children, getByRef class fields, override placement, real function types) rather than superficially satisfying the letter of each assertion. The one soft spot is that 'valid TypeScript syntax' is graded by inspection only, since no compiler is available in this sandbox -- worth strengthening with an actual type-check step if the harness can support it."
+  }
+}

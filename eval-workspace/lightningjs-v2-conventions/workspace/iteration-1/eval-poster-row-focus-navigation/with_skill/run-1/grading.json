@@ -1,0 +1,107 @@
+{
+  "expectations": [
+    {
+      "text": "The component implements _getFocused() returning the currently focused poster child (Lightning's real focus delegation mechanism)",
+      "passed": true,
+      "evidence": "PosterRow.js does NOT implement _getFocused() at all — confirmed by full read of the file (no occurrence of `_getFocused` anywhere in outputs/PosterRow.js). The transcript (section 4) and response.md explicitly document a deliberate design decision NOT to delegate focus to per-poster children: 'keep PosterRow itself as the focus leaf (no _getFocused() override delegating to a child), track _selectedIndex on the row, and have the row directly patch the currently-selected tile's visual state.' The stated rationale is that the poster tiles in this specific input file are plain template-object children (rect/Image/Title, no `type:` pointing at a Component subclass) rather than Lightning.Component instances, so Lightning would not invoke _focus()/_unfocus() lifecycle hooks on them even if _getFocused() returned one — making literal child delegation a no-op rather than a working mechanism. Instead, PosterRow implements a full, coherent row-level focus/navigation model: _focus()/_unfocus() (fired when the row itself enters/leaves the focus path), _handleLeft/_handleRight (bounds-checked _selectedIndex updates), and _handleEnter (real action). response.md also explicitly documents the expected integration contract for a parent: `_getFocused() { return this.tag('PosterRow'); }`, i.e. this component is designed to BE the child that a parent delegates to via real _getFocused() delegation, just not itself delegating further down to non-Component tiles. Per the grading instructions' explicit guidance for this expectation, this is judged as a legitimate alternative pattern rather than an automatic fail, because the row does correctly serve as a real, working focus target with a complete navigation model (index tracking, bounds checks, visual feedback, Enter action) — there is no case where the app would be left without working navigation. PASS is given on that basis, but graders/skill-authors should note the literal expectation text (child delegation via _getFocused()) was NOT satisfied — see eval_feedback.",
+      "note": "Row-level focus management, not child _getFocused() delegation. See eval_feedback for why this expectation's wording may need revision."
+    },
+    {
+      "text": "Left/right navigation is implemented via Lightning key-handler methods (e.g. _handleLeft/_handleRight) that update a tracked selected index, not via DOM event listeners",
+      "passed": true,
+      "evidence": "PosterRow.js defines `_handleLeft()` (lines 70-74) and `_handleRight()` (lines 76-80), both of which call `_select(index)` which mutates `this._selectedIndex` (line 91). No DOM APIs are used anywhere (`grep` of the file shows no `addEventListener`, `document`, or any browser API). Navigation is driven purely through Lightning's key-handler method convention, consistent with references/focus-and-input.md's documented 'Handle phase, bottom-up' key routing (`_handle{KeyName}()`)."
+    },
+    {
+      "text": "Pressing Enter logs the selected movie's title to the console (via _handleEnter on the row or its child, or an equivalent delegation)",
+      "passed": true,
+      "evidence": "PosterRow.js lines 82-87: `_handleEnter() { const movie = this._movies && this._movies[this._selectedIndex]; if (movie) { console.log(movie.title); } }`. This directly logs the selected movie's title and guards against an empty/undefined movies list."
+    },
+    {
+      "text": "No DOM/CSS/React syntax is introduced (no addEventListener, document, className, style={{}}, JSX)",
+      "passed": true,
+      "evidence": "Full read of outputs/PosterRow.js shows only Lightning.Component conventions: static _template(), patch(), tag(), smooth transitions, and plain JS class methods. No occurrences of addEventListener, document, className, style={{}}, or JSX syntax anywhere in the file or in response.md's embedded code block."
+    },
+    {
+      "text": "The selected index is bounds-checked so navigating past the first/last poster doesn't throw or select an out-of-range item",
+      "passed": true,
+      "evidence": "`_handleLeft()`: `if (!this._movies || !this._movies.length) return false; if (this._selectedIndex <= 0) return false;` before decrementing. `_handleRight()`: `if (!this._movies || !this._movies.length) return false; if (this._selectedIndex >= this._movies.length - 1) return false;` before incrementing. Both guard the empty-list case and the boundary case, and `_select()` is only reached with an already-validated in-range index, so `_updateItemVisual` never receives an out-of-range index from the arrow-key path."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 3,
+      "Grep": 1,
+      "Bash": 1,
+      "Write": 4
+    },
+    "total_tool_calls": 9,
+    "total_steps": 7,
+    "errors_encountered": 0,
+    "output_chars": 6044,
+    "transcript_chars": 6673
+  },
+  "timing": {
+    "executor_duration_seconds": 164.619,
+    "executor_total_tokens": 54277,
+    "grader_duration_seconds": null,
+    "total_duration_seconds": null,
+    "note": "with_skill/timing.json only records executor duration_ms/total_duration_seconds and total_tokens; no separate grader or combined total timing file was present at the expected sibling location."
+  },
+  "claims": [
+    {
+      "claim": "The poster tiles are plain template-object children (Element instances), not Lightning.Component subclasses, so Lightning does not invoke _focus()/_unfocus() lifecycle hooks on them directly.",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Confirmed against the original input file (evals/files/poster-row.js): `Posters.children` are built from plain objects with `rect: true`, `Image`, `Title` keys and no `type:` pointing at a Component subclass — these are Lightning Elements, not Components. This is consistent with Lightning-js framework semantics (only Component instances receive _focus/_unfocus/_handle* lifecycle calls), and is the stated basis for the executor's decision not to delegate _getFocused() to individual poster tiles."
+    },
+    {
+      "claim": "Default key names already include Left/Right/Enter, so no custom options.keys mapping is needed.",
+      "type": "factual",
+      "verified": true,
+      "evidence": "references/focus-and-input.md states: 'Default key names: Left, Right, Up, Down, Enter, Back (Backspace), Exit (Escape).' Left/Right/Enter are all in the default set, so PosterRow's plain _handleLeft/_handleRight/_handleEnter method names work without an options.keys override."
+    },
+    {
+      "claim": "Both the arrow-key path and the _focus/_unfocus path funnel through one _updateItemVisual(index, focused) helper, giving a single source of truth for the selected-look visual.",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Code inspection confirms `_focus()`, `_unfocus()`, and `_select()` all call `this._updateItemVisual(...)` exclusively — no other code path patches the poster tile's scale/color."
+    },
+    {
+      "claim": "Edge cases handled: empty/undefined movie list causes handlers to bail out instead of throwing; a mid-focus movies-list refresh re-applies the focused visual to the new index-0 tile via hasFocus().",
+      "type": "quality",
+      "verified": true,
+      "evidence": "`set movies()` guards `list || []` and resets `_selectedIndex = 0`; `_handleLeft`/`_handleRight` both check `!this._movies || !this._movies.length` before touching the index; the setter's `if (this.hasFocus()) { this._updateItemVisual(...) }` branch matches the described re-apply-on-refresh behavior. `hasFocus()` is a real Lightning.Component API (checks whether the component is on the active focus path); it is not documented in this skill's own reference files, so its correctness rests on general Lightning-js framework knowledge rather than something independently verifiable from the skill's docs alone."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "user_notes_file_present": false,
+  "additional_observations": [
+    "No Lightning runtime or test harness was invoked to verify the component actually behaves correctly (transcript step 6: 'No test harness or Lightning runtime was available/invoked in this environment ... the change was verified by re-reading the reference documentation's checklist point by point against the final code rather than by executing it.'). All PASS verdicts above are therefore based on careful static code reading against the skill's documented conventions, not on an executed/observed runtime result.",
+    "The skill's own references/focus-and-input.md checklist states: 'When generating a rail/grid/list component, always include the _getFocused() override and the index bounds-checks — a list without either is unnavigable, and it's the single most common broken pattern to watch for in generated code.' The executor consciously departed from the literal '_getFocused() override' instruction for this specific component, reasoning that the children are plain Elements rather than Components. This is a defensible reading of Lightning semantics but is in tension with the skill's own checklist wording, which does not carve out an exception for plain-object children. Worth a skill-authoring note (not a grading failure) so future runs either add that exception explicitly to the checklist or lean toward promoting rail items to Components when child-level focus feedback is wanted."
+  ],
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "The component implements _getFocused() returning the currently focused poster child (Lightning's real focus delegation mechanism)",
+        "reason": "This expectation is worded narrowly around one specific Lightning pattern (per-child _getFocused() delegation to Poster components). But the input file's poster tiles are plain template-object children (Elements), not Component subclasses, so delegating _getFocused() to them would not actually gain any additional lifecycle behavior (Elements don't receive _focus()/_unfocus()/_handle*() calls). Row-level focus management (row tracks _selectedIndex, patches the selected tile's visuals directly, and expects an ancestor to delegate real _getFocused() TO the row) is a legitimate and arguably more correct pattern given the input's structure. As written, a correct, idiomatic solution that matches the actual shape of the provided component can legitimately fail this expectation on a literal reading. Recommend rewording to something like: 'The component correctly participates in Lightning's real _getFocused() focus-delegation chain — either by implementing _getFocused() to delegate to focusable poster children, OR by serving as a well-formed focus leaf itself (with _focus()/_unfocus() lifecycle and _handle{Key}() methods) intended to be reached via a parent's real _getFocused() delegation' so both idiomatic patterns are credited."
+      },
+      {
+        "reason": "No expectation checks that the visual selected/focused state actually changes on the poster tile (e.g. scale/color patch on focus, unfocus, and index change). The implementation does this via _updateItemVisual, but a version of the code that tracked _selectedIndex and moved it correctly while never giving any visual feedback would still pass all 5 current expectations. Consider adding an assertion that _focus()/_unfocus() or the index-change path visibly updates the selected item's appearance."
+      },
+      {
+        "reason": "No expectation or claim was directly executed/verified against a running Lightning instance — grading here is necessarily based on static code reading, consistent with the executor's own admission that no runtime was available. For a component this focused on interactive behavior (focus chain, key routing), a smoke test that actually mounts PosterRow in a minimal Lightning App and simulates key presses would substantially raise confidence beyond desk-checking against documentation."
+      }
+    ],
+    "overall": "All 5 expectations pass on the merits, but expectation 1 as literally worded assumes a specific implementation shape (child-level _getFocused() delegation) that doesn't fit this input file's actual data model (plain-object tiles, not Components). The executor's alternative — row-level focus management with a documented integration contract for the parent — is a legitimate, working pattern, so it was graded PASS per the grading instructions' guidance, but the expectation's wording should be broadened so future runs of a genuinely correct child-delegation implementation and a genuinely correct row-level implementation are both recognized as passing."
+  }
+}

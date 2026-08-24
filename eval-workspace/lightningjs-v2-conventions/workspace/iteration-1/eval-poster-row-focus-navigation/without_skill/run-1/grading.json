@@ -1,0 +1,91 @@
+{
+  "expectations": [
+    {
+      "text": "The component implements _getFocused() returning the currently focused poster child (Lightning's real focus delegation mechanism)",
+      "passed": true,
+      "evidence": "outputs/PosterRow.js lines 85-87: `_getFocused() { return this._posterItems[this._selectedIndex] || this; }`. This is the strong/idiomatic form of the pattern: each movie tile was extracted into its own `Poster extends Lightning.Component` subclass (lines 8-45), and `_getFocused()` delegates to the actual child instance at the tracked index (falling back to `this` only when the list is empty, so Lightning always gets a valid focus target). This is real per-child delegation, not the simpler self-focus fallback the eval brief flagged as acceptable — so it clears the bar either way."
+    },
+    {
+      "text": "Left/right navigation is implemented via Lightning key-handler methods (e.g. _handleLeft/_handleRight) that update a tracked selected index, not via DOM event listeners",
+      "passed": true,
+      "evidence": "outputs/PosterRow.js lines 89-101: `_handleLeft()` decrements `this._selectedIndex` (guarded by `> 0`) and `_handleRight()` increments it (guarded by `< this._posterItems.length - 1`); both call `this._refocus()` afterward to re-trigger Lightning's focus/unfocus lifecycle. No `addEventListener`, `document`, or any DOM API appears anywhere in the file."
+    },
+    {
+      "text": "Pressing Enter logs the selected movie's title to the console (via _handleEnter on the row or its child, or an equivalent delegation)",
+      "passed": true,
+      "evidence": "outputs/PosterRow.js lines 103-108: `_handleEnter() { const movie = this._movies[this._selectedIndex]; if (movie) { console.log(movie.title); } }`, implemented on `PosterRow` and guarded against an empty movie list."
+    },
+    {
+      "text": "No DOM/CSS/React syntax is introduced (no addEventListener, document, className, style={{}}, JSX)",
+      "passed": true,
+      "evidence": "Full read of outputs/PosterRow.js confirms no `addEventListener`, `document`, `className`, `style={{`, or JSX syntax anywhere. All styling is done via Lightning's own `_template()`/`patch()` object conventions (color, w/h, smooth transitions), consistent with the original input file's idioms."
+    },
+    {
+      "text": "The selected index is bounds-checked so navigating past the first/last poster doesn't throw or select an out-of-range item",
+      "passed": true,
+      "evidence": "`_handleLeft()` only decrements when `this._selectedIndex > 0`; `_handleRight()` only increments when `this._selectedIndex < this._posterItems.length - 1`. Traced the empty-list edge case: with 0 posters, `_posterItems.length - 1` is `-1`, and since `_selectedIndex` starts at `0`, the `_handleRight` guard `0 < -1` is false, so no increment/throw occurs. `_handleEnter` additionally guards with `if (movie)` before logging."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 1,
+      "Bash": 1,
+      "Write": 4
+    },
+    "total_tool_calls": 6,
+    "total_steps": 6,
+    "errors_encountered": 0,
+    "output_chars": 5574,
+    "transcript_chars": 5581
+  },
+  "timing": {
+    "total_duration_seconds": 108.117,
+    "total_tokens": 44416
+  },
+  "claims": [
+    {
+      "claim": "Each poster tile was extracted into its own `Poster` (Lightning.Component) class with `_focus()`/`_unfocus()` lifecycle methods driving the highlight visuals",
+      "type": "process",
+      "verified": true,
+      "evidence": "outputs/PosterRow.js lines 8-45 define `class Poster extends Lightning.Component` with `movie` setter/getter and `_focus()`/`_unfocus()` methods that patch color and scale."
+    },
+    {
+      "claim": "The unused `Utils` import from the original file was removed",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Original input (evals/files/poster-row.js) imports `{ Lightning, Utils }`; output imports only `{ Lightning }`. `Utils` was indeed never referenced in the original, so removing it is a safe, correct cleanup."
+    },
+    {
+      "claim": "`_selectedIndex` is reset to 0 whenever `movies` is reassigned, to avoid a stale out-of-range index when the list shrinks",
+      "type": "quality",
+      "verified": true,
+      "evidence": "`set movies(list)` (lines 60-72) sets `this._selectedIndex = 0` before rebuilding `Posters.children`. This is a real (if blunt) fix for the stated concern, though it does mean any in-progress selection is lost on every list update rather than being clamped to the new length — a minor UX tradeoff not covered by any expectation."
+    },
+    {
+      "claim": "The code was not executed against a live Lightning runtime because none was available in the environment",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript step 6 explicitly states this and describes a static, from-first-principles implementation instead. This is an honest disclosed limitation rather than an overclaim — the executor did not claim the code was tested/verified to run."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Left/right navigation is implemented via Lightning key-handler methods... that update a tracked selected index",
+        "reason": "No expectation checks that `_refocus()` (or an equivalent) is actually called after mutating `_selectedIndex`. A subtly broken implementation could update the index correctly (so Enter still logs the right title) while never re-triggering Lightning's focus/unfocus lifecycle, leaving the on-screen highlight silently stuck on the wrong tile. That would still pass all five current expectations. Consider adding an assertion like 'after _handleLeft/_handleRight, the component signals Lightning to re-evaluate focus (e.g. via _refocus()) so the visual highlight actually moves', since this run's output does this correctly but nothing explicitly rewards it."
+      }
+    ],
+    "overall": "All five expectations are discriminating here and were met with genuine, correct implementations rather than superficial matches (e.g. real per-child _getFocused delegation instead of a same-component fallback, and directional guards on both _handleLeft/_handleRight rather than a single unbounded clamp). The one gap is that nothing checks the _refocus()/highlight-update half of the navigation contract, which this output happens to get right but which no assertion would have caught if it were missing."
+  }
+}

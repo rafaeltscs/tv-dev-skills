@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "poster-row-focus-navigation",
+  "prompt": "I'm building a TV home screen with @lightningjs/core (Lightning v2). I have a `PosterRow` component that renders a horizontal row of movie poster tiles from an array of movie objects (title, image). Right now the remote control does nothing on this row — left/right don't move between posters and Enter doesn't do anything. Add focus handling so the user can navigate between posters with left/right and pressing Enter logs the selected movie's title to the console. Here's my component.",
+  "assertions": [
+    "The component implements _getFocused() returning the currently focused poster child (Lightning's real focus delegation mechanism)",
+    "Left/right navigation is implemented via Lightning key-handler methods (e.g. _handleLeft/_handleRight) that update a tracked selected index, not via DOM event listeners",
+    "Pressing Enter logs the selected movie's title to the console (via _handleEnter on the row or its child, or an equivalent delegation)",
+    "No DOM/CSS/React syntax is introduced (no addEventListener, document, className, style={{}}, JSX)",
+    "The selected index is bounds-checked so navigating past the first/last poster doesn't throw or select an out-of-range item"
+  ]
+}

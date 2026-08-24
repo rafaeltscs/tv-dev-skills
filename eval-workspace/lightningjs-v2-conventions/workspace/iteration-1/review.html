@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "lightningjs-v2-conventions", "runs": [{"id": "eval-button-js-to-ts-template-spec-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "Button.ts", "type": "text", "content": "import { Lightning } from '@lightningjs/core';\n\n/**\n * Template Spec: describes Button's public contract.\n * - Lower-case keys are properties (read/write via getters/setters below).\n * - Upper-case keys are template children (refs).\n */\nexport interface ButtonTemplateSpec extends Lightning.Component.TemplateSpec {\n  /** Text shown on the button's label. */\n  label: string;\n  /** Called when the button is activated via the remote's Enter key. */\n  onEnter: (() => void) | null;\n\n  Background: object;\n  Label: object;\n}\n\nexport default class Button\n  extends Lightning.Component<ButtonTemplateSpec>\n  implements Lightning.Component.ImplementTemplateSpec<ButtonTemplateSpec>\n{\n  private _label = 'Click me';\n  private _onEnter: (() => void) | null = null;\n\n  // Both children are created in _template() and never removed, so grab\n  // them once as class fields (see typescript.md: getByRef vs getter rule\n  // of thumb) instead of re-resolving them via tag() on every use.\n  private _Background = this.getByRef('Background')!;\n  private _Label = this.getByRef('Label')!;\n\n  static override _template(): Lightning.Component.Template<ButtonTemplateSpec> {\n    return {\n      w: 300,\n      h: 80,\n      Background: {\n        w: (w: number) => w,\n        h: (h: number) => h,\n        rect: true,\n        color: 0xff2b2b2b,\n      },\n      Label: {\n        x: 20,\n        y: 20,\n        text: { text: 'Click me', fontSize: 28 },\n      },\n    };\n  }\n\n  override _init(): void {\n    this._onEnter = null;\n  }\n\n  get onEnter(): (() => void) | null {\n    return this._onEnter;\n  }\n\n  set onEnter(cb: (() => void) | null) {\n    this._onEnter = cb;\n  }\n\n  get label(): string {\n    return this._label;\n  }\n\n  set label(value: string) {\n    this._label = value;\n    this._Label.patch({ text: { text: value } });\n  }\n\n  override _focus(): void {\n    this._Background.patch({ color: 0xff4b9fff });\n  }\n\n  override _unfocus(): void {\n    this._Background.patch({ color: 0xff2b2b2b });\n  }\n\n  // Not a base-class override: `_handleEnter` is picked up by name via\n  // Lightning's key-handling convention (see focus-and-input.md), so it\n  // does not carry the `override` keyword.\n  _handleEnter(): void {\n    if (this._onEnter) this._onEnter();\n  }\n}\n"}, {"name": "response.md", "type": "text", "content": "# Button.js \u00e2\u2020\u2019 Button.ts\n\nHere's the TypeScript conversion, using a proper **Template Spec** rather than\nfalling back to a Loose component or `any`.\n\n## What changed and why\n\n**1. A `ButtonTemplateSpec` interface describes the public contract.**\nLower-case keys (`label`, `onEnter`) are properties; upper-case keys\n(`Background`, `Label`) are template children. This is what lets\n`getByRef()`, `patch()`, and the property getters/setters all get real\ninference instead of `any`.\n\n```ts\nexport interface ButtonTemplateSpec extends Lightning.Component.TemplateSpec {\n  label: string;\n  onEnter: (() => void) | null;\n\n  Background: object;\n  Label: object;\n}\n```\n\n**2. The class wires the spec in two places**: as the generic argument to\n`Lightning.Component<ButtonTemplateSpec>`, and via\n`implements Lightning.Component.ImplementTemplateSpec<ButtonTemplateSpec>`.\nThe `implements` clause is what forces the compiler to make sure `label` and\n`onEnter` actually exist as typed accessors on the class \u00e2\u20ac\u201d if you typo'd one\nor left it untyped, this is what would catch it.\n\n**3. `label` is now a real `get`/`set` pair, not just a setter.**\nThe original only had `set label(value)`. I kept the setter's behavior\nidentical (patch the `Label` ref's text) but added a backing field\n(`_label`) and a matching getter, both typed `string`. This matches the\nTemplate Spec rule that a property must be genuinely readable/writable, and\nit also fixes a latent gap in the original \u00e2\u20ac\u201d reading `button.label` back\nused to silently return `undefined`.\n\n**4. `onEnter` is typed as `(() => void) | null`.**\nThat's the real shape of the callback prop: it takes no arguments, returns\nnothing, and can be explicitly cleared by assigning `null` (which `_init()`\nalready did). I added a getter here too for the same \"real accessor, not\nhalf of one\" reason as `label`.\n\n**5. `Background` and `Label` are grabbed once via `getByRef()`** instead of\nrepeated `this.tag('Background')` / `this.tag('Label')` calls. Per the\nskill's rule of thumb: a child created in `_template()` and never removed\nshould be captured once as a class field with a non-null assertion (`!`),\nbecause we know it exists from the template. This is also the reason to\nprefer `getByRef` over `tag` in TS \u00e2\u20ac\u201d it's typed off the spec instead of\nreturning a loosely-typed lookup result.\n\n**6. `static _template()` is typed as\n`Lightning.Component.Template<ButtonTemplateSpec>`**, and the inline width/\nheight functions on `Background` (`(w) => w`, `(h) => h`) got explicit\n`(w: number) => number` / `(h: number) => number` signatures \u00e2\u20ac\u201d those were\nimplicitly-`any` parameters in the original that TS would otherwise flag\nunder `strict`.\n\n**7. `override` on lifecycle hooks.** With `noImplicitOverride` (the\nrecommended tsconfig setting for Lightning TS projects), any method that\nactually overrides a base `Lightning.Component` method \u00e2\u20ac\u201d `_template`,\n`_init`, `_focus`, `_unfocus` \u00e2\u20ac\u201d needs the `override` keyword. `_handleEnter`\ndoes **not** get `override`: it isn't a declared base-class method, it's\npicked up dynamically by Lightning's key-handling convention (see\n`_handle{KeyName}` in the framework's focus/input model), so there's nothing\nin the base class type for it to override.\n\n**8. Refs kept `PascalCase`, properties kept `camelCase`** \u00e2\u20ac\u201d unchanged from\nthe original, since that convention is exactly what lets the Template Spec\ndistinguish properties from children.\n\nNo behavior changes versus the original component \u00e2\u20ac\u201d same default label text,\nsame focus colors, same Enter-key callback semantics. The only functional\naddition is that `label` and `onEnter` are now actually readable, which they\nimplicitly should have been.\n\n## Final code\n\n```ts\nimport { Lightning } from '@lightningjs/core';\n\n/**\n * Template Spec: describes Button's public contract.\n * - Lower-case keys are properties (read/write via getters/setters below).\n * - Upper-case keys are template children (refs).\n */\nexport interface ButtonTemplateSpec extends Lightning.Component.TemplateSpec {\n  /** Text shown on the button's label. */\n  label: string;\n  /** Called when the button is activated via the remote's Enter key. */\n  onEnter: (() => void) | null;\n\n  Background: object;\n  Label: object;\n}\n\nexport default class Button\n  extends Lightning.Component<ButtonTemplateSpec>\n  implements Lightning.Component.ImplementTemplateSpec<ButtonTemplateSpec>\n{\n  private _label = 'Click me';\n  private _onEnter: (() => void) | null = null;\n\n  // Both children are created in _template() and never removed, so grab\n  // them once as class fields (see typescript.md: getByRef vs getter rule\n  // of thumb) instead of re-resolving them via tag() on every use.\n  private _Background = this.getByRef('Background')!;\n  private _Label = this.getByRef('Label')!;\n\n  static override _template(): Lightning.Component.Template<ButtonTemplateSpec> {\n    return {\n      w: 300,\n      h: 80,\n      Background: {\n        w: (w: number) => w,\n        h: (h: number) => h,\n        rect: true,\n        color: 0xff2b2b2b,\n      },\n      Label: {\n        x: 20,\n        y: 20,\n        text: { text: 'Click me', fontSize: 28 },\n      },\n    };\n  }\n\n  override _init(): void {\n    this._onEnter = null;\n  }\n\n  get onEnter(): (() => void) | null {\n    return this._onEnter;\n  }\n\n  set onEnter(cb: (() => void) | null) {\n    this._onEnter = cb;\n  }\n\n  get label(): string {\n    return this._label;\n  }\n\n  set label(value: string) {\n    this._label = value;\n    this._Label.patch({ text: { text: value } });\n  }\n\n  override _focus(): void {\n    this._Background.patch({ color: 0xff4b9fff });\n  }\n\n  override _unfocus(): void {\n    this._Background.patch({ color: 0xff2b2b2b });\n  }\n\n  // Not a base-class override: `_handleEnter` is picked up by name via\n  // Lightning's key-handling convention (see focus-and-input.md), so it\n  // does not carry the `override` keyword.\n  _handleEnter(): void {\n    if (this._onEnter) this._onEnter();\n  }\n}\n```\n"}], "grading": {"expectations": [{"text": "Defines a TypeScript TemplateSpec type/interface (e.g. extends Lightning.Component.TemplateSpec) rather than typing the whole class as any", "passed": true, "evidence": "outputs/Button.ts lines 8-16 define `export interface ButtonTemplateSpec extends Lightning.Component.TemplateSpec { label: string; onEnter: (() => void) | null; Background: object; Label: object; }`. The class then wires it via `extends Lightning.Component<ButtonTemplateSpec> implements Lightning.Component.ImplementTemplateSpec<ButtonTemplateSpec>` (lines 18-21). `TemplateSpecLoose` (the any-like opt-out) is not used, and no property or method is typed `any`."}, {"text": "Template child refs (Background, Label) use PascalCase and are distinguished from camelCase properties (onEnter, label) per Lightning's TS conventions", "passed": true, "evidence": "In the ButtonTemplateSpec interface, children are declared as `Background: object;` and `Label: object;` (PascalCase), while properties are `label: string;` and `onEnter: (() => void) | null;` (camelCase) -- matching the convention documented in references/components-and-templates.md ('keys starting with an uppercase letter are children') and references/typescript.md's example interface. The original button.js already used this casing for its tag names, and the executor preserved it rather than renaming anything."}, {"text": "The onEnter callback prop has a real function type (e.g. () => void), not any", "passed": true, "evidence": "Declared as `onEnter: (() => void) | null;` in the interface (line 12) and implemented as `get onEnter(): (() => void) | null { return this._onEnter; }` / `set onEnter(cb: (() => void) | null) { this._onEnter = cb; }` (lines 53-59). No `any` appears anywhere in the file (verified via grep -- zero matches)."}, {"text": "Uses getByRef() (or another typed accessor) rather than untyped tag() calls for accessing typed children", "passed": true, "evidence": "Lines 28-29: `private _Background = this.getByRef('Background')!;` and `private _Label = this.getByRef('Label')!;`, used thereafter in `_focus`/`_unfocus`/`set label`. The original's `this.tag('Background')` / `this.tag('Label')` calls (button.js lines 31, 35, 39) do not appear anywhere in the output -- confirmed via inspection, no `.tag(` calls remain."}, {"text": "The resulting file is valid TypeScript syntax (.ts extension, class property type annotations, no leftover untyped any on the public props)", "passed": true, "evidence": "Output file is outputs/Button.ts. Class fields carry explicit annotations (`private _onEnter: (() => void) | null = null;`), method return types are annotated (`: void`, `: (() => void) | null`), and the template method is typed `Lightning.Component.Template<ButtonTemplateSpec>`. Manual inspection shows balanced braces/parens and syntactically well-formed TS; grep confirms no `any` token anywhere in the file. Note: this could not be confirmed by actually running `tsc` -- no Node/npm/tsc toolchain or `@lightningjs/core` package is available in this sandbox (the transcript itself notes the same limitation: 'No test runner or tsc was available in this skills repo... checked by hand'), so the verdict rests on manual syntax/type review rather than a compiler run."}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {"Read": 5, "Bash": 2, "Write": 4}, "total_tool_calls": 11, "total_steps": 6, "errors_encountered": 0, "output_chars": 5944, "transcript_chars": 6214}, "timing": {"total_duration_seconds": 154.522, "total_tokens": 57191}, "claims": [{"claim": "The original button.js only had setters for `label` and `onEnter`, with no getters, meaning reading `button.label` back would silently return undefined", "type": "factual", "verified": true, "evidence": "Confirmed against skills/lightningjs-v2-conventions/evals/files/button.js: only `set onEnter(cb)` (line 26) and `set label(value)` (line 30) exist; there is no `get label()` or `get onEnter()`."}, {"claim": "`_handleEnter()` should not carry the `override` keyword because it is picked up by Lightning's key-dispatch naming convention rather than being a declared method on the Lightning.Component base class", "type": "process", "verified": true, "evidence": "references/focus-and-input.md documents that the 'Handle phase' searches for `_handle{KeyName}()` by name convention (lines 95-97) and its checklist separately lists `_handleEnter()` as an action-key convention (line 125), consistent with it not being a literal base-class override."}, {"claim": "The conversion introduces no observable behavior change other than making `label`/`onEnter` genuinely readable", "type": "quality", "verified": true, "evidence": "Diffing outputs/Button.ts against button.js: same default template dimensions/colors (300x80, 0xff2b2b2b / 0xff4b9fff), same `_init` reset of onEnter to null, same patch calls in `_focus`/`_unfocus`/`set label`, same `_handleEnter` guard logic. The only additions are the two getters and type annotations, which is an additive, non-breaking change as claimed."}, {"claim": "Background/Label are children created in _template() and never removed, justifying the class-field + `!` pattern over a getter-per-access pattern", "type": "quality", "verified": true, "evidence": "button.js's `_template()` (and the converted Button.ts's) always includes both `Background` and `Label` unconditionally with no code path that removes them, matching the rule of thumb in references/typescript.md ('Child is created in _template() and never removed -> assign once as a class field with !')."}], "user_notes_summary": {"uncertainties": [], "needs_review": [], "workarounds": ["No tsc/Node toolchain was available to compile-check the result; the executor verified types by hand against the reference docs instead of compiling (transcript Step 10)."]}, "eval_feedback": {"suggestions": [{"assertion": "The resulting file is valid TypeScript syntax (.ts extension, class property type annotations, no leftover untyped any on the public props)", "reason": "Neither the executor nor this grader had access to tsc/Node/@lightningjs/core type definitions in this environment, so 'valid TypeScript syntax' was verified by manual reading rather than an actual compile. This assertion is currently unfalsifiable in a rigorous sense for any answer that merely looks plausible -- consider having the eval harness vendor a minimal tsconfig + @lightningjs/core type stubs (or at least the public Lightning.Component type surface) so this expectation can be checked with a real `tsc --noEmit` run rather than eyeballing."}, {"reason": "No expectation checks that the converted component preserves the original's runtime behavior (same default color/size/text, same _focus/_unfocus/_handleEnter logic). The executor got this right, but a subtly wrong conversion (e.g. swapped focus colors, dropped the _handleEnter guard) would satisfy all five current typing-focused assertions while being a functionally broken conversion. Consider adding a behavior-preservation assertion alongside the typing ones."}], "overall": "All five expectations pass with genuine, specific evidence -- the output is a faithful, idiomatic Template Spec conversion that mirrors the skill's own documented patterns (PascalCase children, getByRef class fields, override placement, real function types) rather than superficially satisfying the letter of each assertion. The one soft spot is that 'valid TypeScript syntax' is graded by inspection only, since no compiler is available in this sandbox -- worth strengthening with an actual type-check step if the harness can support it."}}}, {"id": "eval-button-js-to-ts-template-spec-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "Button.ts", "type": "text", "content": "import { Lightning } from '@lightningjs/core';\n\n/**\n * Template spec describing the shape of this component's template tree.\n * Extending Lightning.Component.TemplateSpec gives the base w/h/etc.\n * properties, and lets `_template()` and the typed refs below be checked\n * against the same source of truth.\n */\nexport interface ButtonTemplateSpec extends Lightning.Component.TemplateSpec {\n  Background: {\n    color: number;\n  };\n  Label: {\n    text: {\n      text: string;\n      fontSize: number;\n    };\n  };\n}\n\n/** Shape of the `onEnter` callback prop. */\nexport type ButtonOnEnterCallback = () => void;\n\nexport default class Button\n  extends Lightning.Component<ButtonTemplateSpec>\n  implements Lightning.Component.ImplementTemplateSpec<ButtonTemplateSpec>\n{\n  private _onEnter: ButtonOnEnterCallback | null = null;\n\n  // Typed template refs (resolved once, reused by _focus/_unfocus/label).\n  readonly Background = this.getByRef('Background')!;\n  readonly Label = this.getByRef('Label')!;\n\n  static override _template(): Lightning.Component.Template<ButtonTemplateSpec> {\n    return {\n      w: 300,\n      h: 80,\n      Background: {\n        w: (w: number) => w,\n        h: (h: number) => h,\n        rect: true,\n        color: 0xff2b2b2b,\n      },\n      Label: {\n        x: 20,\n        y: 20,\n        text: { text: 'Click me', fontSize: 28 },\n      },\n    };\n  }\n\n  override _init() {\n    this._onEnter = null;\n  }\n\n  set onEnter(cb: ButtonOnEnterCallback | null) {\n    this._onEnter = cb;\n  }\n\n  set label(value: string) {\n    this.Label.patch({ text: { text: value } });\n  }\n\n  override _focus() {\n    this.Background.patch({ color: 0xff4b9fff });\n  }\n\n  override _unfocus() {\n    this.Background.patch({ color: 0xff2b2b2b });\n  }\n\n  override _handleEnter() {\n    if (this._onEnter) this._onEnter();\n  }\n}\n"}, {"name": "response.md", "type": "text", "content": "# Button.js \u00e2\u2020\u2019 Button.ts\n\nHere's the TypeScript conversion. I aimed for real typing throughout rather than falling back to `any`:\n\n- **Template spec**: I declared a `ButtonTemplateSpec` interface extending `Lightning.Component.TemplateSpec` that describes the two children (`Background`, `Label`) and their patchable properties. `static _template()` is annotated to return `Lightning.Component.Template<ButtonTemplateSpec>`, so the template object literal is checked against that shape.\n- **Typed refs**: Instead of calling `this.tag('Label')` / `this.tag('Background')` (which types loosely), the class implements `Lightning.Component.ImplementTemplateSpec<ButtonTemplateSpec>` and declares `readonly Background = this.getByRef('Background')!` and `readonly Label = this.getByRef('Label')!`. That gives you real, non-`any` element references for `.patch(...)` calls, resolved once instead of looked up by string on every access.\n- **`label` setter**: typed to accept `string`, matching the `text.text` field in the template spec, and now writes through the typed `Label` ref.\n- **`onEnter` prop**: I introduced a small `ButtonOnEnterCallback = () => void` alias and typed both the private backing field (`_onEnter: ButtonOnEnterCallback | null`) and the setter (`cb: ButtonOnEnterCallback | null`) with it, so callers get a real function-shaped type instead of `any`.\n- **Lifecycle methods**: `_init`, `_focus`, `_unfocus`, and `_handleEnter` are marked `override` (they override `Lightning.Component` base methods), which lets the compiler catch typos in method names against the base class.\n- The `w`/`h` inline functions on `Background` are explicitly typed as `(w: number) => w` / `(h: number) => h` since template dimension callbacks receive numbers.\n\n## Final code\n\n```ts\nimport { Lightning } from '@lightningjs/core';\n\n/**\n * Template spec describing the shape of this component's template tree.\n * Extending Lightning.Component.TemplateSpec gives the base w/h/etc.\n * properties, and lets `_template()` and the typed refs below be checked\n * against the same source of truth.\n */\nexport interface ButtonTemplateSpec extends Lightning.Component.TemplateSpec {\n  Background: {\n    color: number;\n  };\n  Label: {\n    text: {\n      text: string;\n      fontSize: number;\n    };\n  };\n}\n\n/** Shape of the `onEnter` callback prop. */\nexport type ButtonOnEnterCallback = () => void;\n\nexport default class Button\n  extends Lightning.Component<ButtonTemplateSpec>\n  implements Lightning.Component.ImplementTemplateSpec<ButtonTemplateSpec>\n{\n  private _onEnter: ButtonOnEnterCallback | null = null;\n\n  // Typed template refs (resolved once, reused by _focus/_unfocus/label).\n  readonly Background = this.getByRef('Background')!;\n  readonly Label = this.getByRef('Label')!;\n\n  static override _template(): Lightning.Component.Template<ButtonTemplateSpec> {\n    return {\n      w: 300,\n      h: 80,\n      Background: {\n        w: (w: number) => w,\n        h: (h: number) => h,\n        rect: true,\n        color: 0xff2b2b2b,\n      },\n      Label: {\n        x: 20,\n        y: 20,\n        text: { text: 'Click me', fontSize: 28 },\n      },\n    };\n  }\n\n  override _init() {\n    this._onEnter = null;\n  }\n\n  set onEnter(cb: ButtonOnEnterCallback | null) {\n    this._onEnter = cb;\n  }\n\n  set label(value: string) {\n    this.Label.patch({ text: { text: value } });\n  }\n\n  override _focus() {\n    this.Background.patch({ color: 0xff4b9fff });\n  }\n\n  override _unfocus() {\n    this.Background.patch({ color: 0xff2b2b2b });\n  }\n\n  override _handleEnter() {\n    if (this._onEnter) this._onEnter();\n  }\n}\n```\n\n## Notes / things to double-check in your project\n\n- `getByRef` and `ImplementTemplateSpec` are the typed-ref mechanism used by `@lightningjs/core`'s TypeScript definitions; if your installed version of `@lightningjs/core` predates that API, you'd fall back to `this.tag('Label') as Lightning.Element` casts instead \u00e2\u20ac\u201d let me know if you want that variant.\n- I made `onEnter` accept `null` in addition to the callback type, since `_init` resets `_onEnter` to `null` and the setter should be able to clear it the same way.\n- If you have a `tsconfig.json` with `useDefineForClassFields` enabled, the `readonly Background = this.getByRef(...)` class field initializers run in declaration order at construction time, after `_template()`'s refs exist \u00e2\u20ac\u201d this is the standard pattern and should work as-is, but flag it if your build setup does anything unusual with field initialization order.\n"}], "grading": {"expectations": [{"text": "Defines a TypeScript TemplateSpec type/interface (e.g. extends Lightning.Component.TemplateSpec) rather than typing the whole class as any", "passed": true, "evidence": "Button.ts lines 9-19: `export interface ButtonTemplateSpec extends Lightning.Component.TemplateSpec { Background: { color: number }; Label: { text: { text: string; fontSize: number } }; }`. The class extends `Lightning.Component<ButtonTemplateSpec>` (line 25) and `static _template()` is annotated to return `Lightning.Component.Template<ButtonTemplateSpec>` (line 34), so the interface is actually wired into the class rather than being decorative. No `any` appears anywhere in the file (grep for `any` returned zero matches)."}, {"text": "Template child refs (Background, Label) use PascalCase and are distinguished from camelCase properties (onEnter, label) per Lightning's TS conventions", "passed": true, "evidence": "Interface children `Background`/`Label` (Button.ts lines 10, 13) and the class's typed ref fields `readonly Background`/`readonly Label` (lines 31-32) are PascalCase, matching the original JS ref names (`this.tag('Background')`, `this.tag('Label')`). The component's own API surface, `set onEnter(cb)` (line 56) and `set label(value)` (line 60), stays camelCase. This mirrors the naming split documented in the skill's own reference/typescript.md ('Properties: lower-case keys... Children: upper-case keys')."}, {"text": "The onEnter callback prop has a real function type (e.g. () => void), not any", "passed": true, "evidence": "Line 22: `export type ButtonOnEnterCallback = () => void;`. Applied to the private backing field (`private _onEnter: ButtonOnEnterCallback | null = null;`, line 28) and the setter parameter (`set onEnter(cb: ButtonOnEnterCallback | null)`, line 56) \u00e2\u20ac\u201d a real, callable function type, not `any`."}, {"text": "Uses getByRef() (or another typed accessor) rather than untyped tag() calls for accessing typed children", "passed": true, "evidence": "Lines 31-32: `readonly Background = this.getByRef('Background')!;` and `readonly Label = this.getByRef('Label')!;`, then used at every access site (`this.Background.patch(...)` in `_focus`/`_unfocus`, `this.Label.patch(...)` in the `label` setter). A grep of the file for `tag(` found zero matches \u00e2\u20ac\u201d every previous `this.tag('X')` call from the original JS was replaced."}, {"text": "The resulting file is valid TypeScript syntax (.ts extension, class property type annotations, no leftover untyped any on the public props)", "passed": true, "evidence": "File is `outputs/Button.ts`. Braces/parens balance and the class body reads as syntactically well-formed TS: import, interface, type alias, a class with `extends`/`implements`, typed fields (`private _onEnter: ButtonOnEnterCallback | null`), typed setter parameters (`cb: ButtonOnEnterCallback | null`, `value: string`), and `override` on all five overridden members (`_template`, `_init`, `_focus`, `_unfocus`, `_handleEnter`). No `any` appears anywhere. Note: no `tsc`/`node` toolchain was available in this environment to run an actual compile (neither `tsc` nor `node` was found on PATH), so this is a structural/visual syntax check rather than a verified compiler pass \u00e2\u20ac\u201d the `@lightningjs/core` types (`getByRef`, `ImplementTemplateSpec`) were not installed to type-check against either."}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {"Read": 1, "Bash": 1, "Write": 4}, "total_tool_calls": 6, "total_steps": 6, "errors_encountered": 0, "output_chars": 4483, "transcript_chars": 4084}, "timing": {"executor_duration_seconds": 97.958, "total_duration_seconds": 97.958}, "claims": [{"claim": "The class implements Lightning.Component.ImplementTemplateSpec<ButtonTemplateSpec> in addition to extending Lightning.Component<ButtonTemplateSpec>", "type": "factual", "verified": true, "evidence": "Button.ts lines 24-27."}, {"claim": "No runtime behavior was changed \u00e2\u20ac\u201d only types, `override` modifiers, and the tag()->getByRef() switch were added", "type": "quality", "verified": true, "evidence": "Side-by-side with button.js: the template tree, colors (0xff2b2b2b / 0xff4b9fff), _init/_focus/_unfocus/_handleEnter logic, and the onEnter-callback-guard (`if (this._onEnter) this._onEnter();`) are byte-for-byte the same as the original JS; only type annotations, the interface/type alias, `override`, and the ref-access mechanism changed."}, {"claim": "`fontSize` was included in the Label text template-spec type even though no setter touches it directly", "type": "factual", "verified": true, "evidence": "Button.ts line 16: `fontSize: number;` inside `Label.text`, matching the literal `fontSize: 28` in `_template()` (line 47); no setter in the class writes `fontSize`, consistent with the transcript's stated assumption."}, {"claim": "The chosen `getByRef`/`ImplementTemplateSpec` pattern matches idiomatic Lightning TS usage", "type": "quality", "verified": true, "evidence": "Cross-checked against this repo's own skill reference at skills/lightningjs-v2-conventions/references/typescript.md, whose 'Template Specs \u00e2\u20ac\u201d the core pattern' section shows the identical shape: `extends Lightning.Component<T> implements Lightning.Component.ImplementTemplateSpec<T>`, `static override _template(): Lightning.Component.Template<T>`, and `private _Label = this.getByRef('Label')!;` for a ref that's always present. The submission's structure lines up almost exactly with that reference example, down to using `!` for a ref known to exist from `_template()`."}], "user_notes_summary": {"uncertainties": [], "needs_review": [], "workarounds": []}, "eval_feedback": {"suggestions": [{"reason": "This is the 'without_skill' baseline, and it already produces output that matches the skill's own reference/typescript.md example almost line-for-line (interface extending TemplateSpec, extends+implements ImplementTemplateSpec, getByRef with `!` for a permanent ref, `override` on lifecycle hooks). That suggests the model already has this idiomatic Lightning-TS pattern from general/pretraining knowledge for a component this simple, so this particular eval item may not strongly discriminate 'has the skill' from 'doesn't have the skill' \u00e2\u20ac\u201d worth checking whether the with_skill run actually differs in any material way, or comparing against a harder component (e.g. one with a Component-typed child, an EventMap/SignalMap, or a Loose spec) where the skill's guidance is more likely to matter."}, {"assertion": "The resulting file is valid TypeScript syntax (.ts extension, class property type annotations, no leftover untyped any on the public props)", "reason": "This was graded by visual/structural inspection only \u00e2\u20ac\u201d no `tsc`/`node` toolchain was available in this grading environment to actually type-check the file against real `@lightningjs/core` type declarations. A subtly wrong use of `ImplementTemplateSpec` or `getByRef`'s generic signature would pass this assertion today. If a real compile pass is feasible in the eval harness (installing `@lightningjs/core` and running `tsc --noEmit`), that would make this assertion meaningfully stronger and catch cases where the model's typing is plausible-looking but doesn't actually compile."}], "overall": "All 5 expectations pass with concrete, non-superficial evidence (real type aliases, real getByRef usage, no `any`, override on every overridden member). The main caveat is that expectation 5 ('valid TypeScript syntax') could only be checked structurally, not via an actual compiler run, and the baseline's near-textbook-perfect output (matching the skill's own reference file) raises a question about whether this specific button-conversion prompt is a strong discriminator for the skill's value versus a harder component."}}}, {"id": "eval-modal-signal-handler-bug-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "Parent.js", "type": "text", "content": "import { Lightning } from '@lightningjs/core';\nimport Modal from './modal.js';\n\nexport default class Parent extends Lightning.Component {\n  static _template() {\n    return {\n      Modal: {\n        type: Modal,\n        visible: false,\n        // A child's this.signal(...) call is dropped unless the parent\n        // opts in with a `signals` map at the point where the child is\n        // instantiated. This was the missing piece.\n        signals: { modalClosed: '_handleModalClosed' },\n      },\n    };\n  }\n\n  openModal() {\n    this.tag('Modal').patch({ visible: true });\n    this._setState('Modal');\n  }\n\n  static _states() {\n    return [\n      class Modal extends this {\n        // Add state-specific overrides here (e.g. _getFocused() to\n        // delegate remote-control focus to the Modal child, and\n        // _handleBack()/_handleEnter() as needed). Signal handling for\n        // modalClosed is intentionally left on the root class below so it\n        // fires no matter which state Parent is in when the signal\n        // arrives \u00e2\u20ac\u201d state classes inherit it via `extends this`.\n      },\n    ];\n  }\n\n  _handleModalClosed() {\n    console.log('parent got modalClosed');\n    this.tag('Modal').patch({ visible: false });\n    this._setState('');\n  }\n}\n"}, {"name": "response.md", "type": "text", "content": "# Why `_handleModalClosed` never fires\n\n## Root cause\n\n`Modal` correctly calls `this.signal('modalClosed')` in `_handleBack()`. That\npart is fine. The bug is on the **parent** side: in Lightning v2, a child's\n`this.signal(name, ...)` call is only delivered to the parent if the parent\n**opts in** by declaring a `signals` map at the exact spot in its template\nwhere that child is instantiated:\n\n```js\nModal: {\n  type: Modal,\n  signals: { modalClosed: '_handleModalClosed' }, // <-- this was missing\n},\n```\n\nYour `Parent._template()` instantiates `Modal` with no `signals` entry at\nall:\n\n```js\nstatic _template() {\n  return {\n    Modal: { type: Modal, visible: false },\n  };\n}\n```\n\nWith no `signals` map, Lightning has no idea `_handleModalClosed` should be\ncalled for the `modalClosed` signal \u00e2\u20ac\u201d the signal is simply dropped when it\nreaches the parent. This isn't a typo-level bug (like a misspelled method\nname); it's a missing opt-in that's easy to forget because nothing throws an\nerror \u00e2\u20ac\u201d the signal call succeeds \"silently\" and just goes nowhere.\n\n## A second, related problem: two competing/broken handlers\n\nYour `Parent` actually has *two* handlers that look like they're meant to\nreact to the modal closing, and neither was reachable:\n\n```js\nstatic _states() {\n  return [\n    class Modal extends this {\n      $modalClosed() { ... }   // (1) inside a state\n    },\n  ];\n}\n\n_handleModalClosed() { ... }   // (2) on the root class\n```\n\n- `_handleModalClosed()` (root) is the correct target for `signal()` +\n  `signals` map \u00e2\u20ac\u201d but was unreachable only because the `signals` map was\n  missing (see above).\n- `$modalClosed()` (inside the `Modal` state) uses the `$`-prefixed naming\n  convention, which is how **`fireAncestors()`** targets are named, *not*\n  how direct `signal()` targets are named. Since `Modal` (the component)\n  calls `this.signal('modalClosed')` \u00e2\u20ac\u201d not\n  `this.fireAncestors('$modalClosed')` \u00e2\u20ac\u201d this handler was never going to be\n  invoked no matter what the template said. It's dead code that happened to\n  look plausible because it's sitting right next to `_setState('Modal')`.\n\nMixing the two mechanisms (`signal`/`signals` vs. `fireAncestors`/`$name`)\non the same event is what made this confusing to debug \u00e2\u20ac\u201d there were two\nplausible-looking handlers and both were broken for different reasons.\n\n## Fix\n\n1. Add the `signals` map to the `Modal` entry in `Parent._template()`,\n   pointing at the existing `_handleModalClosed` method.\n2. Consolidate the \"hide the modal + leave the Modal state\" logic into that\n   one root-level `_handleModalClosed()` method (it was previously stranded\n   in the unreachable `$modalClosed()` inside the state). Because Lightning\n   state classes `extends this`, a handler defined on the root class is\n   inherited by every state unless a state overrides it \u00e2\u20ac\u201d so\n   `_handleModalClosed` will fire correctly whether Parent is currently in\n   the `Modal` state or any other state.\n3. Remove the dead `$modalClosed()` state handler (or repurpose that state\n   class for actual state-specific overrides, e.g. `_getFocused()`).\n\n### `parent.js` (corrected)\n\n```js\nimport { Lightning } from '@lightningjs/core';\nimport Modal from './modal.js';\n\nexport default class Parent extends Lightning.Component {\n  static _template() {\n    return {\n      Modal: {\n        type: Modal,\n        visible: false,\n        // A child's this.signal(...) call is dropped unless the parent\n        // opts in with a `signals` map at the point where the child is\n        // instantiated. This was the missing piece.\n        signals: { modalClosed: '_handleModalClosed' },\n      },\n    };\n  }\n\n  openModal() {\n    this.tag('Modal').patch({ visible: true });\n    this._setState('Modal');\n  }\n\n  static _states() {\n    return [\n      class Modal extends this {\n        // Add state-specific overrides here (e.g. _getFocused() to\n        // delegate remote-control focus to the Modal child, and\n        // _handleBack()/_handleEnter() as needed). Signal handling for\n        // modalClosed is intentionally left on the root class below so it\n        // fires no matter which state Parent is in when the signal\n        // arrives \u00e2\u20ac\u201d state classes inherit it via `extends this`.\n      },\n    ];\n  }\n\n  _handleModalClosed() {\n    console.log('parent got modalClosed');\n    this.tag('Modal').patch({ visible: false });\n    this._setState('');\n  }\n}\n```\n\n`modal.js` needs no changes \u00e2\u20ac\u201d its `this.signal('modalClosed')` call was\nalready correct:\n\n```js\nimport { Lightning } from '@lightningjs/core';\n\nexport default class Modal extends Lightning.Component {\n  static _template() {\n    return {\n      rect: true,\n      w: 600,\n      h: 400,\n      color: 0xdd000000,\n      Message: {\n        x: 40,\n        y: 40,\n        text: { text: 'Are you sure?', fontSize: 30 },\n      },\n    };\n  }\n\n  _handleBack() {\n    this.signal('modalClosed');\n  }\n}\n```\n\n## One more thing worth checking (not shown in the provided files)\n\n`Parent`'s `Modal` state doesn't override `_getFocused()`. For `Modal`'s\n`_handleBack()` to run at all, remote-control focus needs to actually be\ndelegated down to the `Modal` child while that state is active \u00e2\u20ac\u201d otherwise\nBack-key presses will be handled by whatever *does* currently own focus\n(possibly `Parent` itself, which has no `_handleBack`), and `Modal` would\nnever get the chance to call `this.signal('modalClosed')` in the first\nplace. If closing the modal via Back isn't working either, add this to the\n`Modal` state:\n\n```js\nclass Modal extends this {\n  _getFocused() {\n    return this.tag('Modal');\n  }\n}\n```\n"}], "grading": {"expectations": [{"text": "Identifies that this.signal() requires the parent to declare a signals (or passSignals) map at the template site where the child is instantiated, and that the Modal entry in Parent's template has no such map", "passed": true, "evidence": "response.md, 'Root cause' section: \"a child's this.signal(name, ...) call is only delivered to the parent if the parent opts in by declaring a signals map at the exact spot in its template where that child is instantiated\" followed immediately by: \"Your Parent._template() instantiates Modal with no signals entry at all\" quoting the exact offending code `Modal: { type: Modal, visible: false }`. Transcript step 3 independently confirms the same mechanism was found via references/communication.md and explicitly names the missing signals key as 'the direct cause'."}, {"text": "Provides a concrete fix that adds a signals map (e.g. signals: { modalClosed: '_handleModalClosed' }) to the Modal template entry in Parent", "passed": true, "evidence": "outputs/Parent.js line 13 adds `signals: { modalClosed: '_handleModalClosed' },` inside the Modal template entry, exactly matching the expectation's example. response.md shows the identical diff in its 'Fix' section and step 1 of the fix list, and the fix is also documented as the 'Fix applied' step in the transcript."}, {"text": "Recognizes that the $modalClosed() method inside the Modal state is unrelated dead code because $-prefixed names are the fireAncestors() convention, not the signal() convention, and Modal never calls fireAncestors", "passed": true, "evidence": "response.md, 'A second, related problem' section: \"$modalClosed() (inside the Modal state) uses the $-prefixed naming convention, which is how fireAncestors() targets are named, not how direct signal() targets are named. Since Modal (the component) calls this.signal('modalClosed') \u00e2\u20ac\u201d not this.fireAncestors('$modalClosed') \u00e2\u20ac\u201d this handler was never going to be invoked no matter what the template said. It's dead code...\" Transcript step 3 has matching reasoning drawn from references/communication.md."}, {"text": "Does not claim the bug is purely a _handleModalClosed vs $modalClosed naming mismatch without also identifying the missing signals map, since renaming alone would not fix the bug", "passed": true, "evidence": "The output consistently frames the missing signals map as the 'Root cause' / 'primary bug' and treats the $modalClosed naming mismatch as a separate, secondary dead-code issue that was 'never going to connect regardless of the signals map fix' (transcript step 5). The applied fix adds the signals map (not a rename) and removes the dead $modalClosed handler rather than renaming it to _handleModalClosed, so no version of the diagnosis reduces the bug to a naming mismatch alone."}, {"text": "Does not misattribute the bug to something unrelated to Lightning's signal-wiring contract, like a DOM-style addEventListener pattern or a focus-delegation issue, as the primary cause", "passed": true, "evidence": "No DOM/addEventListener framing appears anywhere. A focus-delegation (_getFocused) point is raised, but only in a final section explicitly titled 'One more thing worth checking (not shown in the provided files)', and the transcript explicitly scopes it as 'a \"check this too\" note rather than the primary fix, since the reported symptom ... point[s] squarely at the missing signals map.' The primary/root cause throughout is unambiguously the missing signals map."}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {"Read": 5, "Write": 4, "Bash": 1}, "total_tool_calls": 10, "total_steps": 6, "errors_encountered": 0, "output_chars": 5569, "transcript_chars": 5941}, "timing": {"total_duration_seconds": 142.254, "total_tokens": 51796}, "claims": [{"claim": "A child's this.signal(...) call is only delivered to the parent if the parent declares a signals map at the template site where the child is instantiated", "type": "factual", "verified": true, "evidence": "Matches the ground truth from references/communication.md as given in the task: 'The parent opts in by declaring a signals map in the template where that child is instantiated. Without that map, the signal call is silently dropped no matter what methods exist on the parent.'"}, {"claim": "$-prefixed method names are the convention for fireAncestors() targets, unrelated to signal()", "type": "factual", "verified": true, "evidence": "Matches ground truth: '$-prefixed method names are specifically the convention for fireAncestors() targets, unrelated to signal().'"}, {"claim": "Lightning state classes extend the root component class ('extends this'), so a handler on the root class is inherited by every state unless overridden", "type": "factual", "verified": true, "evidence": "Not independently re-derivable from the two input files alone, but the transcript states this was confirmed by reading references/states.md, and the claim is internally consistent with the observed code pattern `class Modal extends this` in parent.js. Treated as verified via the skill's own reference material, which the task designates as ground truth."}, {"claim": "The executor read SKILL.md, modal.js, parent.js, references/communication.md, and references/states.md (5 reads) and deliberately skipped focus-and-input.md and typescript.md", "type": "process", "verified": true, "evidence": "metrics.json reports Read: 5, matching the 5 files enumerated in transcript steps 1-4. Transcript step 1 explicitly states the two other reference files were skipped as not relevant to this task."}, {"claim": "modal.js needs no changes", "type": "quality", "verified": true, "evidence": "Comparing evals/files/modal.js (original) to the modal.js reproduced in response.md, the content is identical \u00e2\u20ac\u201d only parent.js/Parent.js was modified, consistent with the diagnosis that the defect was entirely in the parent's template wiring."}], "user_notes_summary": {"uncertainties": [], "needs_review": [], "workarounds": []}, "eval_feedback": {"suggestions": [{"assertion": "Does not misattribute the bug to something unrelated to Lightning's signal-wiring contract, like a DOM-style addEventListener pattern or a focus-delegation issue, as the primary cause", "reason": "This assertion is satisfiable simply by never mentioning focus delegation at all, which would be a weaker (and arguably less helpful) response than what was produced here. The executor actually raised a legitimate, correctly-scoped secondary point about _getFocused()/focus delegation, explicitly labeled as non-primary. As worded, the assertion can't distinguish 'never mentions focus delegation' from 'mentions it correctly as secondary,' even though the latter is more valuable. Consider rewording to explicitly allow a well-scoped secondary mention, e.g. 'may raise focus-delegation as a secondary check but must not present it as the root cause instead of the missing signals map.'"}], "overall": "All five expectations passed with strong, specific evidence \u00e2\u20ac\u201d the response correctly isolates the missing signals map as the sole root cause, correctly identifies the $modalClosed/fireAncestors dead code as an unrelated distraction, and applies a real, syntactically valid code fix (verified by diffing outputs/Parent.js against the original parent.js) rather than a superficial rename. No expectation appears trivially satisfiable by a wrong answer, though expectation 5's phrasing has a minor gap noted above regarding legitimate secondary observations."}}}, {"id": "eval-modal-signal-handler-bug-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "Parent.js", "type": "text", "content": "import { Lightning } from '@lightningjs/core';\nimport Modal from './modal.js';\n\nexport default class Parent extends Lightning.Component {\n  static _template() {\n    return {\n      Modal: { type: Modal, visible: false },\n    };\n  }\n\n  openModal() {\n    this.tag('Modal').patch({ visible: true });\n    this._setState('Modal');\n  }\n\n  static _states() {\n    return [\n      class Modal extends this {\n        // Without this, Back (and any other key) never reaches the modal,\n        // because Lightning only calls _handleXxx on the focused branch,\n        // and Parent's default _getFocused() never delegates to the modal.\n        _getFocused() {\n          return this.tag('Modal');\n        }\n\n        // Signals dispatch to \"$eventName\" methods on the owner, resolved\n        // through the active state - NOT \"_handleEventName\". This is the\n        // one method that actually runs when Modal calls\n        // this.signal('modalClosed').\n        $modalClosed() {\n          console.log('parent got modalClosed');\n          this.tag('Modal').patch({ visible: false });\n          this._setState('');\n        }\n      },\n    ];\n  }\n}\n"}, {"name": "response.md", "type": "text", "content": "# Why the parent never hears `modalClosed`\n\nThere are actually **two** separate Lightning v2 convention mistakes stacked on\ntop of each other here. Either one alone would be enough to break the flow,\nwhich is why it looks like \"nothing happens\" when the modal should close.\n\n## Bug 1 (the root cause): the modal never receives the Back key at all\n\n`Modal._handleBack()` is a **key handler**. Lightning only invokes\n`_handleXxx` methods (`_handleBack`, `_handleEnter`, `_handleKey`, etc.) on\ncomponents that are part of the currently *focused* branch of the component\ntree. Focus is resolved by calling `_getFocused()` recursively, starting at\nthe `Application` root and delegating downward \u00e2\u20ac\u201d each component decides\nwhich child (if any) should receive focus next.\n\n`Parent` never overrides `_getFocused()`. So even after `openModal()` sets\n`visible: true` and switches to the `Modal` state, focus never actually moves\nto `this.tag('Modal')`. The Back key keeps being handled wherever focus\nalready was (typically still `Parent` itself, or higher up), so\n`Modal._handleBack()` is never called, so `this.signal('modalClosed')` is\nnever called, and everything downstream is dead in the water.\n\n**Fix:** add a `_getFocused()` override to the `Modal` state so that while\nthe modal is open, key events (including Back) are routed to it:\n\n```js\n_getFocused() {\n  return this.tag('Modal');\n}\n```\n\n## Bug 2: `_handleModalClosed` is the wrong naming convention for a signal handler\n\nEven once the signal *does* fire, `_handleModalClosed()` on `Parent` will\n**never** be invoked by it. That's not a focus problem, it's a naming\nmismatch:\n\n- `_handleXxx` is the convention for **key/focus handlers**, invoked by\n  Lightning's remote-control key routing (what Bug 1 is about).\n- `signal(event, ...args)` uses a completely different lookup: it calls\n  `$<event>` on the owner (`this.cparent`), resolved through whatever state\n  is currently active. So `this.signal('modalClosed')` looks for a method\n  literally named `$modalClosed`.\n\nYour code already has a correctly named handler \u00e2\u20ac\u201d `$modalClosed()` inside\nthe `Modal` state \u00e2\u20ac\u201d and *that* is the one actually responsible for hiding\nthe modal and calling `_setState('')`. The `_handleModalClosed()` method at\nthe bottom of `Parent` is unreachable dead code, presumably written by\nanalogy with `_handleBack`/`_handleEnter` instead of the `$`-prefixed signal\nconvention. It will never run, with or without the focus fix.\n\n**Fix:** delete `_handleModalClosed()` and fold whatever it was meant to do\n(the debug log) into the real `$modalClosed()` handler.\n\n## Corrected `parent.js`\n\n```js\nimport { Lightning } from '@lightningjs/core';\nimport Modal from './modal.js';\n\nexport default class Parent extends Lightning.Component {\n  static _template() {\n    return {\n      Modal: { type: Modal, visible: false },\n    };\n  }\n\n  openModal() {\n    this.tag('Modal').patch({ visible: true });\n    this._setState('Modal');\n  }\n\n  static _states() {\n    return [\n      class Modal extends this {\n        // Without this, Back (and any other key) never reaches the modal,\n        // because Lightning only calls _handleXxx on the focused branch,\n        // and Parent's default _getFocused() never delegates to the modal.\n        _getFocused() {\n          return this.tag('Modal');\n        }\n\n        // Signals dispatch to \"$eventName\" methods on the owner, resolved\n        // through the active state - NOT \"_handleEventName\". This is the\n        // one method that actually runs when Modal calls\n        // this.signal('modalClosed').\n        $modalClosed() {\n          console.log('parent got modalClosed');\n          this.tag('Modal').patch({ visible: false });\n          this._setState('');\n        }\n      },\n    ];\n  }\n}\n```\n\n`modal.js` needs no changes \u00e2\u20ac\u201d `this.signal('modalClosed')` inside\n`_handleBack()` is correct Lightning v2 usage. It was only unreachable\nbecause the parent never gave it focus.\n\n## Quick recap of the two conventions to keep straight\n\n| Convention | Who calls it | Used for |\n|---|---|---|\n| `_handleBack`, `_handleEnter`, `_handleKey`, ... | Lightning's key-routing, along the focused branch (`_getFocused()`) | Remote-control / keyboard input |\n| `$eventName` | `signal(eventName, ...)`, called on the owner (`this.cparent`), resolved through the active state | Child-to-parent notifications |\n\nIf a `$`-handler \"never fires,\" check two things in order: (1) is the event\nactually being triggered (in this case, does the component signalling it\neven get focus/input), and (2) is the receiving method actually named with\nthe `$` prefix and reachable in whatever state is currently active.\n"}], "grading": {"expectations": [{"text": "Identifies that this.signal() requires the parent to declare a signals (or passSignals) map at the template site where the child is instantiated, and that the Modal entry in Parent's template has no such map", "passed": false, "evidence": "Neither the transcript nor outputs/response.md ever mentions a `signals:` (or `passSignals:`) map. The transcript instead asserts (Step 2): \"Signals ... this.signal(event, ...args) ... It looks up a method named $<event> on the owner (this.cparent), resolved through whichever state is currently active on that owner.\" response.md repeats this model verbatim (\"signal(event, ...args) uses a completely different lookup: it calls $<event> on the owner\"). The proposed corrected Parent.js template is `Modal: { type: Modal, visible: false }` with no `signals` key at all. The missing-map requirement is never surfaced."}, {"text": "Provides a concrete fix that adds a signals map (e.g. signals: { modalClosed: '_handleModalClosed' }) to the Modal template entry in Parent", "passed": false, "evidence": "outputs/Parent.js (the delivered fix) keeps the template entry as `Modal: { type: Modal, visible: false }` \u00e2\u20ac\u201d no `signals` key is added anywhere. The two changes actually made are adding `_getFocused()` to the Modal state and deleting `_handleModalClosed()` in favor of the pre-existing `$modalClosed()`. No signals map is proposed."}, {"text": "Recognizes that the $modalClosed() method inside the Modal state is unrelated dead code because $-prefixed names are the fireAncestors() convention, not the signal() convention, and Modal never calls fireAncestors", "passed": false, "evidence": "The transcript and response.md conclude the exact opposite: they treat `$modalClosed()` as the correct, already-working signal handler (\"Your code already has a correctly named handler \u00e2\u20ac\u201d $modalClosed() inside the Modal state \u00e2\u20ac\u201d and that is the one actually responsible...\", response.md lines 45-47) and instead call `_handleModalClosed()` the dead code. `fireAncestors()` is never mentioned anywhere in the transcript or outputs."}, {"text": "Does not claim the bug is purely a _handleModalClosed vs $modalClosed naming mismatch without also identifying the missing signals map, since renaming alone would not fix the bug", "passed": false, "evidence": "response.md's \"Bug 2\" section is framed explicitly as a naming-convention mismatch: \"`_handleModalClosed` is the wrong naming convention for a signal handler ... That's not a focus problem, it's a naming mismatch.\" The prescribed fix is to delete `_handleModalClosed()` and fold its console.log into the existing `$modalClosed()` \u00e2\u20ac\u201d i.e., exactly the rename/consolidate-by-name fix the expectation says is insufficient, with no signals map ever added alongside it."}, {"text": "Does not misattribute the bug to something unrelated to Lightning's signal-wiring contract, like a DOM-style addEventListener pattern or a focus-delegation issue, as the primary cause", "passed": false, "evidence": "response.md explicitly labels the focus-delegation issue as the primary cause: \"## Bug 1 (the root cause): the modal never receives the Back key at all\" ... \"Parent never overrides _getFocused() ... focus never actually moves to this.tag('Modal') ... so this.signal('modalClosed') is never called\". The transcript likewise states \"This is the root-cause bug: the notification never even gets sent,\" attributing root cause to missing _getFocused() delegation \u00e2\u20ac\u201d precisely the kind of unrelated-to-signal-wiring-contract primary attribution this expectation flags."}], "summary": {"passed": 0, "failed": 5, "total": 5, "pass_rate": 0.0}, "execution_metrics": {"tool_calls": {"Read": 2, "Bash": 3, "Write": 4}, "total_tool_calls": 9, "total_steps": 7, "errors_encountered": 0, "output_chars": 4651, "transcript_chars": 5199}, "timing": {"executor_duration_seconds": 214.573, "total_duration_seconds": 214.573}, "claims": [{"claim": "signal(event, ...args) looks up a method literally named $<event> on the owner (this.cparent), resolved through whichever state is active", "type": "factual", "verified": false, "evidence": "This contradicts the ground-truth contract: signal() delivery depends on a `signals` map declared in the template at the child's instantiation site, not on a bare `$`-prefixed method existing on the owner. `$`-prefixed names are the fireAncestors() convention. The executor's entire diagnosis is built on this incorrect model of signal() semantics, which is why it never surfaces the actual missing-signals-map bug."}, {"claim": "$modalClosed() inside Parent's Modal state is already correct and would run once the signal is actually sent", "type": "quality", "verified": false, "evidence": "False under the ground-truth contract: since Parent's template never declares a `signals` map for the Modal tag, this.signal('modalClosed') is silently dropped regardless of _getFocused() being fixed or of $modalClosed existing. The delivered Parent.js fix would not resolve the user's reported symptom."}, {"claim": "Modal._handleBack() never fires because Parent never overrides _getFocused(), so key events never reach the Modal branch", "type": "process", "verified": true, "evidence": "This is a plausible, independently real observation about the given code (Parent has no _getFocused() override and openModal() never moves focus), consistent with the eval author's note that this run 'diagnosed a different real issue.' It is a real secondary bug, but per the eval author's own framing it is not sufficient \u00e2\u20ac\u201d even with this fixed, this.signal('modalClosed') would still be dropped by the missing signals map, so the reported symptom would persist."}, {"claim": "Applying the proposed fix (add _getFocused(), delete _handleModalClosed, keep $modalClosed) resolves the reported bug", "type": "quality", "verified": false, "evidence": "Not justified. Without a `signals` map on the Modal template entry, this.signal('modalClosed') is dropped before any owner-side lookup happens, so $modalClosed() still never runs after this fix is applied. The response does not test or acknowledge this gap."}], "user_notes_summary": {"uncertainties": [], "needs_review": [], "workarounds": []}, "eval_feedback": {"suggestions": [], "overall": "The five assertions are well-targeted and appropriately discriminating: together they require (a) surfacing the specific missing-signals-map mechanism, (b) a fix that actually adds it, (c) correctly attributing $-prefixed names to fireAncestors() rather than signal(), (d) rejecting a naming-mismatch-only framing, and (e) rejecting focus-delegation as the primary cause. This run fails all five, and the failures are substantive rather than superficial: the executor built its whole diagnosis on an incorrect model of signal() dispatch (treating '$eventName' as signal()'s lookup target), which caused it to (1) never mention the signals map, (2) ship a 'fix' that still would not deliver the signal, (3) treat $modalClosed as already-correct rather than misapplied $-fireAncestors naming, (4) frame the actual issue purely as a naming mismatch, and (5) present an unrelated focus/_getFocused() bug as the root cause. No changes to the assertions are suggested."}}}, {"id": "eval-poster-row-focus-navigation-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "PosterRow.js", "type": "text", "content": "import { Lightning, Utils } from '@lightningjs/core';\n\nconst POSTER_W = 200;\nconst POSTER_H = 300;\nconst FOCUSED_SCALE = 1.1;\nconst UNFOCUSED_SCALE = 1;\nconst FOCUSED_COLOR = 0xffffffff;\nconst UNFOCUSED_COLOR = 0xff333333;\n\nexport default class PosterRow extends Lightning.Component {\n  static _template() {\n    return {\n      Posters: {\n        flex: { direction: 'row' },\n      },\n    };\n  }\n\n  set movies(list) {\n    this._movies = list || [];\n    this._selectedIndex = 0;\n    this.patch({\n      Posters: {\n        children: this._movies.map((movie, index) => ({\n          ref: `Poster${index}`,\n          w: POSTER_W,\n          h: POSTER_H,\n          rect: true,\n          color: UNFOCUSED_COLOR,\n          Image: {\n            w: POSTER_W,\n            h: 260,\n            src: movie.image,\n          },\n          Title: {\n            y: 265,\n            text: { text: movie.title, fontSize: 20 },\n          },\n        })),\n      },\n    });\n\n    // If this row already owns focus when the list changes (e.g. movies\n    // were reloaded), re-apply the focused look to the new first item\n    // instead of leaving the old visual state on stale elements.\n    if (this.hasFocus()) {\n      this._updateItemVisual(this._selectedIndex, true);\n    }\n  }\n\n  get movies() {\n    return this._movies;\n  }\n\n  _init() {\n    this._selectedIndex = 0;\n  }\n\n  // Fired when PosterRow becomes the focused leaf of the app's focus path\n  // (a parent component is expected to delegate focus here, e.g. a vertical\n  // menu's `_getFocused()` returning `this.tag('PosterRow')`).\n  _focus() {\n    this._updateItemVisual(this._selectedIndex, true);\n  }\n\n  _unfocus() {\n    this._updateItemVisual(this._selectedIndex, false);\n  }\n\n  _handleLeft() {\n    if (!this._movies || !this._movies.length) return false;\n    if (this._selectedIndex <= 0) return false; // at the start; let it bubble up\n    this._select(this._selectedIndex - 1);\n  }\n\n  _handleRight() {\n    if (!this._movies || !this._movies.length) return false;\n    if (this._selectedIndex >= this._movies.length - 1) return false; // at the end; let it bubble up\n    this._select(this._selectedIndex + 1);\n  }\n\n  _handleEnter() {\n    const movie = this._movies && this._movies[this._selectedIndex];\n    if (movie) {\n      console.log(movie.title);\n    }\n  }\n\n  _select(index) {\n    this._updateItemVisual(this._selectedIndex, false);\n    this._selectedIndex = index;\n    this._updateItemVisual(this._selectedIndex, true);\n  }\n\n  _updateItemVisual(index, focused) {\n    const item = this.tag(`Posters.Poster${index}`);\n    if (!item) return;\n    item.patch({\n      smooth: {\n        scale: focused ? FOCUSED_SCALE : UNFOCUSED_SCALE,\n        color: focused ? FOCUSED_COLOR : UNFOCUSED_COLOR,\n      },\n    });\n  }\n}\n"}, {"name": "response.md", "type": "text", "content": "# Adding remote-control navigation to `PosterRow`\n\n## What was wrong\n\nYour component had no key handlers and no focus feedback at all, so the\nremote had nothing to act on:\n\n- No `_handleLeft` / `_handleRight` \u00e2\u20ac\u201d Lightning didn't know this component\n  wanted to react to those keys.\n- No `_handleEnter` \u00e2\u20ac\u201d nothing ran when the user pressed select.\n- No selected-index tracking beyond a static `this._selectedIndex = 0` that\n  was set once in `_init()` and never read or updated.\n- No visual feedback for which poster is currently selected.\n\n## Design decisions\n\n**The poster tiles are plain template children, not separate Components.**\nYour `Posters.children` are built from plain objects (`rect: true`, `Image`,\n`Title`) \u00e2\u20ac\u201d they're `Element`s, not `Lightning.Component` subclasses. Lightning\nonly invokes lifecycle hooks like `_focus()`/`_unfocus()` on components, so\nindividual poster tiles can't react to being focused/unfocused on their own.\n\nBecause of that, I kept `PosterRow` itself as the **focus leaf** \u00e2\u20ac\u201d it does\n*not* implement `_getFocused()` to delegate down to a child. Instead,\n`PosterRow` tracks `this._selectedIndex` and directly patches the visual\nstate (scale + color) of whichever poster tile is currently selected. This is\nthe standard pattern for TV rails whose items are cheap visual elements\nrather than full components, and it avoids the overhead of instantiating a\nComponent per poster.\n\n(If `PosterRow` sits inside a vertical menu/list, that parent is expected to\ndelegate focus into this row, e.g. `_getFocused() { return\nthis.tag('PosterRow'); }` \u00e2\u20ac\u201d that's outside this file's scope but worth\nknowing when you wire the home screen together.)\n\n**Key handling**: `_handleLeft`/`_handleRight` move `_selectedIndex` with\nbounds checks, per the skill's checklist for rail/list components. When\nalready at the first/last poster, the handlers `return false` so the key\nbubbles up \u00e2\u20ac\u201d e.g. so a parent vertical menu can move focus to the row above\nor below instead of the key being silently swallowed at the row's edge.\n\n**Focus visuals**: `_focus()`/`_unfocus()` fire when `PosterRow` itself\nenters/leaves the focus path (e.g. moving between rows), and toggle the\nvisual state of the currently selected poster. `_select()` (called from the\narrow-key handlers) moves the highlight from the old index to the new one.\nBoth paths funnel through one `_updateItemVisual(index, focused)` helper so\nthere's a single source of truth for what \"selected\" looks like.\n\n**Enter**: `_handleEnter()` looks up the movie at `_selectedIndex` and logs\n`movie.title`.\n\n**Edge cases handled**:\n- Empty/undefined movie list \u00e2\u20ac\u201d handlers bail out instead of throwing.\n- Movies list changing while the row already has focus \u00e2\u20ac\u201d the setter\n  re-applies the focused visual to the new first item via `this.hasFocus()`\n  instead of leaving a stale item highlighted.\n\n## Final component\n\n```js\nimport { Lightning, Utils } from '@lightningjs/core';\n\nconst POSTER_W = 200;\nconst POSTER_H = 300;\nconst FOCUSED_SCALE = 1.1;\nconst UNFOCUSED_SCALE = 1;\nconst FOCUSED_COLOR = 0xffffffff;\nconst UNFOCUSED_COLOR = 0xff333333;\n\nexport default class PosterRow extends Lightning.Component {\n  static _template() {\n    return {\n      Posters: {\n        flex: { direction: 'row' },\n      },\n    };\n  }\n\n  set movies(list) {\n    this._movies = list || [];\n    this._selectedIndex = 0;\n    this.patch({\n      Posters: {\n        children: this._movies.map((movie, index) => ({\n          ref: `Poster${index}`,\n          w: POSTER_W,\n          h: POSTER_H,\n          rect: true,\n          color: UNFOCUSED_COLOR,\n          Image: {\n            w: POSTER_W,\n            h: 260,\n            src: movie.image,\n          },\n          Title: {\n            y: 265,\n            text: { text: movie.title, fontSize: 20 },\n          },\n        })),\n      },\n    });\n\n    // If this row already owns focus when the list changes (e.g. movies\n    // were reloaded), re-apply the focused look to the new first item\n    // instead of leaving the old visual state on stale elements.\n    if (this.hasFocus()) {\n      this._updateItemVisual(this._selectedIndex, true);\n    }\n  }\n\n  get movies() {\n    return this._movies;\n  }\n\n  _init() {\n    this._selectedIndex = 0;\n  }\n\n  // Fired when PosterRow becomes the focused leaf of the app's focus path\n  // (a parent component is expected to delegate focus here, e.g. a vertical\n  // menu's `_getFocused()` returning `this.tag('PosterRow')`).\n  _focus() {\n    this._updateItemVisual(this._selectedIndex, true);\n  }\n\n  _unfocus() {\n    this._updateItemVisual(this._selectedIndex, false);\n  }\n\n  _handleLeft() {\n    if (!this._movies || !this._movies.length) return false;\n    if (this._selectedIndex <= 0) return false; // at the start; let it bubble up\n    this._select(this._selectedIndex - 1);\n  }\n\n  _handleRight() {\n    if (!this._movies || !this._movies.length) return false;\n    if (this._selectedIndex >= this._movies.length - 1) return false; // at the end; let it bubble up\n    this._select(this._selectedIndex + 1);\n  }\n\n  _handleEnter() {\n    const movie = this._movies && this._movies[this._selectedIndex];\n    if (movie) {\n      console.log(movie.title);\n    }\n  }\n\n  _select(index) {\n    this._updateItemVisual(this._selectedIndex, false);\n    this._selectedIndex = index;\n    this._updateItemVisual(this._selectedIndex, true);\n  }\n\n  _updateItemVisual(index, focused) {\n    const item = this.tag(`Posters.Poster${index}`);\n    if (!item) return;\n    item.patch({\n      smooth: {\n        scale: focused ? FOCUSED_SCALE : UNFOCUSED_SCALE,\n        color: focused ? FOCUSED_COLOR : UNFOCUSED_COLOR,\n      },\n    });\n  }\n}\n```\n\n## Wiring it into the home screen\n\nMake sure whatever places `PosterRow` in the tree delegates focus to it when\nappropriate, e.g.:\n\n```js\n_getFocused() {\n  return this.tag('PosterRow'); // or the currently active row\n}\n```\n\nWithout that, `PosterRow`'s `_focus`/`_handleLeft`/`_handleRight`/`_handleEnter`\nwill never be reached, since Lightning only routes key events along the\ncurrent focus path.\n"}], "grading": {"expectations": [{"text": "The component implements _getFocused() returning the currently focused poster child (Lightning's real focus delegation mechanism)", "passed": true, "evidence": "PosterRow.js does NOT implement _getFocused() at all \u00e2\u20ac\u201d confirmed by full read of the file (no occurrence of `_getFocused` anywhere in outputs/PosterRow.js). The transcript (section 4) and response.md explicitly document a deliberate design decision NOT to delegate focus to per-poster children: 'keep PosterRow itself as the focus leaf (no _getFocused() override delegating to a child), track _selectedIndex on the row, and have the row directly patch the currently-selected tile's visual state.' The stated rationale is that the poster tiles in this specific input file are plain template-object children (rect/Image/Title, no `type:` pointing at a Component subclass) rather than Lightning.Component instances, so Lightning would not invoke _focus()/_unfocus() lifecycle hooks on them even if _getFocused() returned one \u00e2\u20ac\u201d making literal child delegation a no-op rather than a working mechanism. Instead, PosterRow implements a full, coherent row-level focus/navigation model: _focus()/_unfocus() (fired when the row itself enters/leaves the focus path), _handleLeft/_handleRight (bounds-checked _selectedIndex updates), and _handleEnter (real action). response.md also explicitly documents the expected integration contract for a parent: `_getFocused() { return this.tag('PosterRow'); }`, i.e. this component is designed to BE the child that a parent delegates to via real _getFocused() delegation, just not itself delegating further down to non-Component tiles. Per the grading instructions' explicit guidance for this expectation, this is judged as a legitimate alternative pattern rather than an automatic fail, because the row does correctly serve as a real, working focus target with a complete navigation model (index tracking, bounds checks, visual feedback, Enter action) \u00e2\u20ac\u201d there is no case where the app would be left without working navigation. PASS is given on that basis, but graders/skill-authors should note the literal expectation text (child delegation via _getFocused()) was NOT satisfied \u00e2\u20ac\u201d see eval_feedback.", "note": "Row-level focus management, not child _getFocused() delegation. See eval_feedback for why this expectation's wording may need revision."}, {"text": "Left/right navigation is implemented via Lightning key-handler methods (e.g. _handleLeft/_handleRight) that update a tracked selected index, not via DOM event listeners", "passed": true, "evidence": "PosterRow.js defines `_handleLeft()` (lines 70-74) and `_handleRight()` (lines 76-80), both of which call `_select(index)` which mutates `this._selectedIndex` (line 91). No DOM APIs are used anywhere (`grep` of the file shows no `addEventListener`, `document`, or any browser API). Navigation is driven purely through Lightning's key-handler method convention, consistent with references/focus-and-input.md's documented 'Handle phase, bottom-up' key routing (`_handle{KeyName}()`)."}, {"text": "Pressing Enter logs the selected movie's title to the console (via _handleEnter on the row or its child, or an equivalent delegation)", "passed": true, "evidence": "PosterRow.js lines 82-87: `_handleEnter() { const movie = this._movies && this._movies[this._selectedIndex]; if (movie) { console.log(movie.title); } }`. This directly logs the selected movie's title and guards against an empty/undefined movies list."}, {"text": "No DOM/CSS/React syntax is introduced (no addEventListener, document, className, style={{}}, JSX)", "passed": true, "evidence": "Full read of outputs/PosterRow.js shows only Lightning.Component conventions: static _template(), patch(), tag(), smooth transitions, and plain JS class methods. No occurrences of addEventListener, document, className, style={{}}, or JSX syntax anywhere in the file or in response.md's embedded code block."}, {"text": "The selected index is bounds-checked so navigating past the first/last poster doesn't throw or select an out-of-range item", "passed": true, "evidence": "`_handleLeft()`: `if (!this._movies || !this._movies.length) return false; if (this._selectedIndex <= 0) return false;` before decrementing. `_handleRight()`: `if (!this._movies || !this._movies.length) return false; if (this._selectedIndex >= this._movies.length - 1) return false;` before incrementing. Both guard the empty-list case and the boundary case, and `_select()` is only reached with an already-validated in-range index, so `_updateItemVisual` never receives an out-of-range index from the arrow-key path."}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {"Read": 3, "Grep": 1, "Bash": 1, "Write": 4}, "total_tool_calls": 9, "total_steps": 7, "errors_encountered": 0, "output_chars": 6044, "transcript_chars": 6673}, "timing": {"executor_duration_seconds": 164.619, "executor_total_tokens": 54277, "grader_duration_seconds": null, "total_duration_seconds": null, "note": "with_skill/timing.json only records executor duration_ms/total_duration_seconds and total_tokens; no separate grader or combined total timing file was present at the expected sibling location."}, "claims": [{"claim": "The poster tiles are plain template-object children (Element instances), not Lightning.Component subclasses, so Lightning does not invoke _focus()/_unfocus() lifecycle hooks on them directly.", "type": "factual", "verified": true, "evidence": "Confirmed against the original input file (evals/files/poster-row.js): `Posters.children` are built from plain objects with `rect: true`, `Image`, `Title` keys and no `type:` pointing at a Component subclass \u00e2\u20ac\u201d these are Lightning Elements, not Components. This is consistent with Lightning-js framework semantics (only Component instances receive _focus/_unfocus/_handle* lifecycle calls), and is the stated basis for the executor's decision not to delegate _getFocused() to individual poster tiles."}, {"claim": "Default key names already include Left/Right/Enter, so no custom options.keys mapping is needed.", "type": "factual", "verified": true, "evidence": "references/focus-and-input.md states: 'Default key names: Left, Right, Up, Down, Enter, Back (Backspace), Exit (Escape).' Left/Right/Enter are all in the default set, so PosterRow's plain _handleLeft/_handleRight/_handleEnter method names work without an options.keys override."}, {"claim": "Both the arrow-key path and the _focus/_unfocus path funnel through one _updateItemVisual(index, focused) helper, giving a single source of truth for the selected-look visual.", "type": "quality", "verified": true, "evidence": "Code inspection confirms `_focus()`, `_unfocus()`, and `_select()` all call `this._updateItemVisual(...)` exclusively \u00e2\u20ac\u201d no other code path patches the poster tile's scale/color."}, {"claim": "Edge cases handled: empty/undefined movie list causes handlers to bail out instead of throwing; a mid-focus movies-list refresh re-applies the focused visual to the new index-0 tile via hasFocus().", "type": "quality", "verified": true, "evidence": "`set movies()` guards `list || []` and resets `_selectedIndex = 0`; `_handleLeft`/`_handleRight` both check `!this._movies || !this._movies.length` before touching the index; the setter's `if (this.hasFocus()) { this._updateItemVisual(...) }` branch matches the described re-apply-on-refresh behavior. `hasFocus()` is a real Lightning.Component API (checks whether the component is on the active focus path); it is not documented in this skill's own reference files, so its correctness rests on general Lightning-js framework knowledge rather than something independently verifiable from the skill's docs alone."}], "user_notes_summary": {"uncertainties": [], "needs_review": [], "workarounds": []}, "user_notes_file_present": false, "additional_observations": ["No Lightning runtime or test harness was invoked to verify the component actually behaves correctly (transcript step 6: 'No test harness or Lightning runtime was available/invoked in this environment ... the change was verified by re-reading the reference documentation's checklist point by point against the final code rather than by executing it.'). All PASS verdicts above are therefore based on careful static code reading against the skill's documented conventions, not on an executed/observed runtime result.", "The skill's own references/focus-and-input.md checklist states: 'When generating a rail/grid/list component, always include the _getFocused() override and the index bounds-checks \u00e2\u20ac\u201d a list without either is unnavigable, and it's the single most common broken pattern to watch for in generated code.' The executor consciously departed from the literal '_getFocused() override' instruction for this specific component, reasoning that the children are plain Elements rather than Components. This is a defensible reading of Lightning semantics but is in tension with the skill's own checklist wording, which does not carve out an exception for plain-object children. Worth a skill-authoring note (not a grading failure) so future runs either add that exception explicitly to the checklist or lean toward promoting rail items to Components when child-level focus feedback is wanted."], "eval_feedback": {"suggestions": [{"assertion": "The component implements _getFocused() returning the currently focused poster child (Lightning's real focus delegation mechanism)", "reason": "This expectation is worded narrowly around one specific Lightning pattern (per-child _getFocused() delegation to Poster components). But the input file's poster tiles are plain template-object children (Elements), not Component subclasses, so delegating _getFocused() to them would not actually gain any additional lifecycle behavior (Elements don't receive _focus()/_unfocus()/_handle*() calls). Row-level focus management (row tracks _selectedIndex, patches the selected tile's visuals directly, and expects an ancestor to delegate real _getFocused() TO the row) is a legitimate and arguably more correct pattern given the input's structure. As written, a correct, idiomatic solution that matches the actual shape of the provided component can legitimately fail this expectation on a literal reading. Recommend rewording to something like: 'The component correctly participates in Lightning's real _getFocused() focus-delegation chain \u00e2\u20ac\u201d either by implementing _getFocused() to delegate to focusable poster children, OR by serving as a well-formed focus leaf itself (with _focus()/_unfocus() lifecycle and _handle{Key}() methods) intended to be reached via a parent's real _getFocused() delegation' so both idiomatic patterns are credited."}, {"reason": "No expectation checks that the visual selected/focused state actually changes on the poster tile (e.g. scale/color patch on focus, unfocus, and index change). The implementation does this via _updateItemVisual, but a version of the code that tracked _selectedIndex and moved it correctly while never giving any visual feedback would still pass all 5 current expectations. Consider adding an assertion that _focus()/_unfocus() or the index-change path visibly updates the selected item's appearance."}, {"reason": "No expectation or claim was directly executed/verified against a running Lightning instance \u00e2\u20ac\u201d grading here is necessarily based on static code reading, consistent with the executor's own admission that no runtime was available. For a component this focused on interactive behavior (focus chain, key routing), a smoke test that actually mounts PosterRow in a minimal Lightning App and simulates key presses would substantially raise confidence beyond desk-checking against documentation."}], "overall": "All 5 expectations pass on the merits, but expectation 1 as literally worded assumes a specific implementation shape (child-level _getFocused() delegation) that doesn't fit this input file's actual data model (plain-object tiles, not Components). The executor's alternative \u00e2\u20ac\u201d row-level focus management with a documented integration contract for the parent \u00e2\u20ac\u201d is a legitimate, working pattern, so it was graded PASS per the grading instructions' guidance, but the expectation's wording should be broadened so future runs of a genuinely correct child-delegation implementation and a genuinely correct row-level implementation are both recognized as passing."}}}, {"id": "eval-poster-row-focus-navigation-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "PosterRow.js", "type": "text", "content": "import { Lightning } from '@lightningjs/core';\n\n/**\n * A single poster tile. Extracted into its own Lightning.Component so it\n * can participate in Lightning's focus chain (it gets `_focus()` /\n * `_unfocus()` lifecycle calls whenever it becomes the focused element).\n */\nclass Poster extends Lightning.Component {\n  static _template() {\n    return {\n      w: 200,\n      h: 300,\n      rect: true,\n      color: 0xff333333,\n      Image: {\n        w: 200,\n        h: 260,\n      },\n      Title: {\n        y: 265,\n        text: { fontSize: 20 },\n      },\n    };\n  }\n\n  set movie(movie) {\n    this._movie = movie;\n    this.patch({\n      Image: { src: movie.image },\n      Title: { text: { text: movie.title } },\n    });\n  }\n\n  get movie() {\n    return this._movie;\n  }\n\n  _focus() {\n    this.patch({ color: 0xffffffff, smooth: { scale: [1.08, { duration: 0.15 }] } });\n  }\n\n  _unfocus() {\n    this.patch({ color: 0xff333333, smooth: { scale: [1, { duration: 0.15 }] } });\n  }\n}\n\nexport default class PosterRow extends Lightning.Component {\n  static _template() {\n    return {\n      Posters: {\n        flex: { direction: 'row' },\n      },\n    };\n  }\n\n  _init() {\n    this._selectedIndex = 0;\n  }\n\n  set movies(list) {\n    this._movies = list || [];\n    // Clamp the selection so it stays valid if the list shrinks/changes.\n    this._selectedIndex = 0;\n    this.patch({\n      Posters: {\n        children: this._movies.map((movie) => ({\n          type: Poster,\n          movie,\n        })),\n      },\n    });\n  }\n\n  get movies() {\n    return this._movies;\n  }\n\n  get _posterItems() {\n    return this.tag('Posters').children;\n  }\n\n  // Tells Lightning which child currently owns focus. Whenever the\n  // returned component changes, Lightning calls `_unfocus()` on the\n  // previous one and `_focus()` on the new one.\n  _getFocused() {\n    return this._posterItems[this._selectedIndex] || this;\n  }\n\n  _handleLeft() {\n    if (this._selectedIndex > 0) {\n      this._selectedIndex--;\n      this._refocus();\n    }\n  }\n\n  _handleRight() {\n    if (this._selectedIndex < this._posterItems.length - 1) {\n      this._selectedIndex++;\n      this._refocus();\n    }\n  }\n\n  _handleEnter() {\n    const movie = this._movies[this._selectedIndex];\n    if (movie) {\n      console.log(movie.title);\n    }\n  }\n}\n"}, {"name": "response.md", "type": "text", "content": "# Adding remote-control focus navigation to `PosterRow`\n\n## What was wrong\n\nYour `PosterRow` renders poster tiles as plain template objects (`ref: 'Poster0'`, etc.) inside a `Posters` flex container, but it never plugs into Lightning's **focus chain**. In Lightning v2, key events (`Left`, `Right`, `Enter`, ...) are only delivered to whatever is on the current *focus path* \u00e2\u20ac\u201d the chain of components from the root down to whichever component `_getFocused()` says owns focus. Since `PosterRow` never implements `_getFocused`, `_handleLeft`, `_handleRight`, or `_handleEnter`, the remote does nothing when this row (or something inside it) is focused: there's simply no handler for Lightning to call.\n\nThere's also a smaller issue: because the posters are plain objects and not `Lightning.Component` instances, there's no clean per-tile hook to react to \"this poster just became selected\" \u00e2\u20ac\u201d you'd have to manually reach into `Posters.children[i]` and patch colors by hand everywhere.\n\n## The fix\n\nTwo changes:\n\n1. **Extract each tile into its own `Poster` component.** This gives each tile `_focus()` / `_unfocus()` lifecycle methods that Lightning calls automatically whenever that specific tile becomes/stops being the focused element \u00e2\u20ac\u201d that's the idiomatic place to do the \"highlight the selected poster\" visual change (I scale it up and brighten it; adjust to taste).\n\n2. **Implement the focus/key-handling contract on `PosterRow`:**\n   - `_getFocused()` \u00e2\u20ac\u201d returns the `Poster` child at `this._selectedIndex`. Lightning calls this to determine the actual focus target; whenever the returned instance changes, Lightning automatically fires `_unfocus()` on the old one and `_focus()` on the new one.\n   - `_handleLeft()` / `_handleRight()` \u00e2\u20ac\u201d move `_selectedIndex` within bounds and call `this._refocus()`, which tells Lightning to re-evaluate `_getFocused()` and update the focus path (triggering the focus/unfocus highlighting).\n   - `_handleEnter()` \u00e2\u20ac\u201d looks up `this._movies[this._selectedIndex]` and `console.log`s its title.\n\nKey events bubble from the focused leaf component up toward the root (Lightning tries `_handle<Key>` on the focused component first, then its ancestors, stopping at the first one that handles it). Since the `Poster` tiles themselves don't implement `_handleLeft/_handleRight/_handleEnter`, those events bubble straight up to `PosterRow`, which is exactly where we want to handle them.\n\nI also reset `_selectedIndex` to `0` whenever a new `movies` list is assigned, so a stale index can't point past the end of a new (possibly shorter) list.\n\n### Using it from a parent screen\n\nFor `PosterRow` to actually receive key events, something above it needs to put it on the focus path \u00e2\u20ac\u201d typically your Home screen's own `_getFocused()` returns the `PosterRow` instance (directly, or via a `FocusManager`-style pattern if you have multiple rows):\n\n```js\n// In the parent Home component\n_getFocused() {\n  return this.tag('Row1'); // the PosterRow instance\n}\n```\n\nIf you have multiple rows and want up/down between rows too, that's handled the same way one level higher: the parent tracks which row index is selected and implements `_handleUp` / `_handleDown` / `_getFocused` the same way `PosterRow` now does for its posters.\n\n## Final component\n\n```js\nimport { Lightning } from '@lightningjs/core';\n\n/**\n * A single poster tile. Extracted into its own Lightning.Component so it\n * can participate in Lightning's focus chain (it gets `_focus()` /\n * `_unfocus()` lifecycle calls whenever it becomes the focused element).\n */\nclass Poster extends Lightning.Component {\n  static _template() {\n    return {\n      w: 200,\n      h: 300,\n      rect: true,\n      color: 0xff333333,\n      Image: {\n        w: 200,\n        h: 260,\n      },\n      Title: {\n        y: 265,\n        text: { fontSize: 20 },\n      },\n    };\n  }\n\n  set movie(movie) {\n    this._movie = movie;\n    this.patch({\n      Image: { src: movie.image },\n      Title: { text: { text: movie.title } },\n    });\n  }\n\n  get movie() {\n    return this._movie;\n  }\n\n  _focus() {\n    this.patch({ color: 0xffffffff, smooth: { scale: [1.08, { duration: 0.15 }] } });\n  }\n\n  _unfocus() {\n    this.patch({ color: 0xff333333, smooth: { scale: [1, { duration: 0.15 }] } });\n  }\n}\n\nexport default class PosterRow extends Lightning.Component {\n  static _template() {\n    return {\n      Posters: {\n        flex: { direction: 'row' },\n      },\n    };\n  }\n\n  _init() {\n    this._selectedIndex = 0;\n  }\n\n  set movies(list) {\n    this._movies = list || [];\n    // Clamp the selection so it stays valid if the list shrinks/changes.\n    this._selectedIndex = 0;\n    this.patch({\n      Posters: {\n        children: this._movies.map((movie) => ({\n          type: Poster,\n          movie,\n        })),\n      },\n    });\n  }\n\n  get movies() {\n    return this._movies;\n  }\n\n  get _posterItems() {\n    return this.tag('Posters').children;\n  }\n\n  // Tells Lightning which child currently owns focus. Whenever the\n  // returned component changes, Lightning calls `_unfocus()` on the\n  // previous one and `_focus()` on the new one.\n  _getFocused() {\n    return this._posterItems[this._selectedIndex] || this;\n  }\n\n  _handleLeft() {\n    if (this._selectedIndex > 0) {\n      this._selectedIndex--;\n      this._refocus();\n    }\n  }\n\n  _handleRight() {\n    if (this._selectedIndex < this._posterItems.length - 1) {\n      this._selectedIndex++;\n      this._refocus();\n    }\n  }\n\n  _handleEnter() {\n    const movie = this._movies[this._selectedIndex];\n    if (movie) {\n      console.log(movie.title);\n    }\n  }\n}\n```\n"}], "grading": {"expectations": [{"text": "The component implements _getFocused() returning the currently focused poster child (Lightning's real focus delegation mechanism)", "passed": true, "evidence": "outputs/PosterRow.js lines 85-87: `_getFocused() { return this._posterItems[this._selectedIndex] || this; }`. This is the strong/idiomatic form of the pattern: each movie tile was extracted into its own `Poster extends Lightning.Component` subclass (lines 8-45), and `_getFocused()` delegates to the actual child instance at the tracked index (falling back to `this` only when the list is empty, so Lightning always gets a valid focus target). This is real per-child delegation, not the simpler self-focus fallback the eval brief flagged as acceptable \u00e2\u20ac\u201d so it clears the bar either way."}, {"text": "Left/right navigation is implemented via Lightning key-handler methods (e.g. _handleLeft/_handleRight) that update a tracked selected index, not via DOM event listeners", "passed": true, "evidence": "outputs/PosterRow.js lines 89-101: `_handleLeft()` decrements `this._selectedIndex` (guarded by `> 0`) and `_handleRight()` increments it (guarded by `< this._posterItems.length - 1`); both call `this._refocus()` afterward to re-trigger Lightning's focus/unfocus lifecycle. No `addEventListener`, `document`, or any DOM API appears anywhere in the file."}, {"text": "Pressing Enter logs the selected movie's title to the console (via _handleEnter on the row or its child, or an equivalent delegation)", "passed": true, "evidence": "outputs/PosterRow.js lines 103-108: `_handleEnter() { const movie = this._movies[this._selectedIndex]; if (movie) { console.log(movie.title); } }`, implemented on `PosterRow` and guarded against an empty movie list."}, {"text": "No DOM/CSS/React syntax is introduced (no addEventListener, document, className, style={{}}, JSX)", "passed": true, "evidence": "Full read of outputs/PosterRow.js confirms no `addEventListener`, `document`, `className`, `style={{`, or JSX syntax anywhere. All styling is done via Lightning's own `_template()`/`patch()` object conventions (color, w/h, smooth transitions), consistent with the original input file's idioms."}, {"text": "The selected index is bounds-checked so navigating past the first/last poster doesn't throw or select an out-of-range item", "passed": true, "evidence": "`_handleLeft()` only decrements when `this._selectedIndex > 0`; `_handleRight()` only increments when `this._selectedIndex < this._posterItems.length - 1`. Traced the empty-list edge case: with 0 posters, `_posterItems.length - 1` is `-1`, and since `_selectedIndex` starts at `0`, the `_handleRight` guard `0 < -1` is false, so no increment/throw occurs. `_handleEnter` additionally guards with `if (movie)` before logging."}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {"Read": 1, "Bash": 1, "Write": 4}, "total_tool_calls": 6, "total_steps": 6, "errors_encountered": 0, "output_chars": 5574, "transcript_chars": 5581}, "timing": {"total_duration_seconds": 108.117, "total_tokens": 44416}, "claims": [{"claim": "Each poster tile was extracted into its own `Poster` (Lightning.Component) class with `_focus()`/`_unfocus()` lifecycle methods driving the highlight visuals", "type": "process", "verified": true, "evidence": "outputs/PosterRow.js lines 8-45 define `class Poster extends Lightning.Component` with `movie` setter/getter and `_focus()`/`_unfocus()` methods that patch color and scale."}, {"claim": "The unused `Utils` import from the original file was removed", "type": "factual", "verified": true, "evidence": "Original input (evals/files/poster-row.js) imports `{ Lightning, Utils }`; output imports only `{ Lightning }`. `Utils` was indeed never referenced in the original, so removing it is a safe, correct cleanup."}, {"claim": "`_selectedIndex` is reset to 0 whenever `movies` is reassigned, to avoid a stale out-of-range index when the list shrinks", "type": "quality", "verified": true, "evidence": "`set movies(list)` (lines 60-72) sets `this._selectedIndex = 0` before rebuilding `Posters.children`. This is a real (if blunt) fix for the stated concern, though it does mean any in-progress selection is lost on every list update rather than being clamped to the new length \u00e2\u20ac\u201d a minor UX tradeoff not covered by any expectation."}, {"claim": "The code was not executed against a live Lightning runtime because none was available in the environment", "type": "process", "verified": true, "evidence": "Transcript step 6 explicitly states this and describes a static, from-first-principles implementation instead. This is an honest disclosed limitation rather than an overclaim \u00e2\u20ac\u201d the executor did not claim the code was tested/verified to run."}], "user_notes_summary": {"uncertainties": [], "needs_review": [], "workarounds": []}, "eval_feedback": {"suggestions": [{"assertion": "Left/right navigation is implemented via Lightning key-handler methods... that update a tracked selected index", "reason": "No expectation checks that `_refocus()` (or an equivalent) is actually called after mutating `_selectedIndex`. A subtly broken implementation could update the index correctly (so Enter still logs the right title) while never re-triggering Lightning's focus/unfocus lifecycle, leaving the on-screen highlight silently stuck on the wrong tile. That would still pass all five current expectations. Consider adding an assertion like 'after _handleLeft/_handleRight, the component signals Lightning to re-evaluate focus (e.g. via _refocus()) so the visual highlight actually moves', since this run's output does this correctly but nothing explicitly rewards it."}], "overall": "All five expectations are discriminating here and were met with genuine, correct implementations rather than superficial matches (e.g. real per-child _getFocused delegation instead of a same-component fallback, and directional guards on both _handleLeft/_handleRight rather than a single unbounded clamp). The one gap is that nothing checks the _refocus()/highlight-update half of the navigation contract, which this output happens to get right but which no assertion would have caught if it were missing."}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "lightningjs-v2-conventions", "skill_path": "skills/lightningjs-v2-conventions", "executor_model": "claude-sonnet-5", "analyzer_model": "claude-sonnet-5", "timestamp": "2026-08-23T20:53:23Z", "evals_run": [1, 2, 3], "runs_per_configuration": 1}, "runs": [{"eval_id": 2, "eval_name": "button-js-to-ts-template-spec", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 154.522, "tokens": 57191, "tool_calls": 11, "errors": 0}, "expectations": [{"text": "Defines a TypeScript TemplateSpec type/interface (e.g. extends Lightning.Component.TemplateSpec) rather than typing the whole class as any", "passed": true, "evidence": "outputs/Button.ts lines 8-16 define `export interface ButtonTemplateSpec extends Lightning.Component.TemplateSpec { label: string; onEnter: (() => void) | null; Background: object; Label: object; }`. The class then wires it via `extends Lightning.Component<ButtonTemplateSpec> implements Lightning.Component.ImplementTemplateSpec<ButtonTemplateSpec>` (lines 18-21). `TemplateSpecLoose` (the any-like opt-out) is not used, and no property or method is typed `any`."}, {"text": "Template child refs (Background, Label) use PascalCase and are distinguished from camelCase properties (onEnter, label) per Lightning's TS conventions", "passed": true, "evidence": "In the ButtonTemplateSpec interface, children are declared as `Background: object;` and `Label: object;` (PascalCase), while properties are `label: string;` and `onEnter: (() => void) | null;` (camelCase) -- matching the convention documented in references/components-and-templates.md ('keys starting with an uppercase letter are children') and references/typescript.md's example interface. The original button.js already used this casing for its tag names, and the executor preserved it rather than renaming anything."}, {"text": "The onEnter callback prop has a real function type (e.g. () => void), not any", "passed": true, "evidence": "Declared as `onEnter: (() => void) | null;` in the interface (line 12) and implemented as `get onEnter(): (() => void) | null { return this._onEnter; }` / `set onEnter(cb: (() => void) | null) { this._onEnter = cb; }` (lines 53-59). No `any` appears anywhere in the file (verified via grep -- zero matches)."}, {"text": "Uses getByRef() (or another typed accessor) rather than untyped tag() calls for accessing typed children", "passed": true, "evidence": "Lines 28-29: `private _Background = this.getByRef('Background')!;` and `private _Label = this.getByRef('Label')!;`, used thereafter in `_focus`/`_unfocus`/`set label`. The original's `this.tag('Background')` / `this.tag('Label')` calls (button.js lines 31, 35, 39) do not appear anywhere in the output -- confirmed via inspection, no `.tag(` calls remain."}, {"text": "The resulting file is valid TypeScript syntax (.ts extension, class property type annotations, no leftover untyped any on the public props)", "passed": true, "evidence": "Output file is outputs/Button.ts. Class fields carry explicit annotations (`private _onEnter: (() => void) | null = null;`), method return types are annotated (`: void`, `: (() => void) | null`), and the template method is typed `Lightning.Component.Template<ButtonTemplateSpec>`. Manual inspection shows balanced braces/parens and syntactically well-formed TS; grep confirms no `any` token anywhere in the file. Note: this could not be confirmed by actually running `tsc` -- no Node/npm/tsc toolchain or `@lightningjs/core` package is available in this sandbox (the transcript itself notes the same limitation: 'No test runner or tsc was available in this skills repo... checked by hand'), so the verdict rests on manual syntax/type review rather than a compiler run."}], "notes": ["No tsc/Node toolchain was available to compile-check the result; the executor verified types by hand against the reference docs instead of compiling (transcript Step 10)."]}, {"eval_id": 3, "eval_name": "modal-signal-handler-bug", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 142.254, "tokens": 51796, "tool_calls": 10, "errors": 0}, "expectations": [{"text": "Identifies that this.signal() requires the parent to declare a signals (or passSignals) map at the template site where the child is instantiated, and that the Modal entry in Parent's template has no such map", "passed": true, "evidence": "response.md, 'Root cause' section: \"a child's this.signal(name, ...) call is only delivered to the parent if the parent opts in by declaring a signals map at the exact spot in its template where that child is instantiated\" followed immediately by: \"Your Parent._template() instantiates Modal with no signals entry at all\" quoting the exact offending code `Modal: { type: Modal, visible: false }`. Transcript step 3 independently confirms the same mechanism was found via references/communication.md and explicitly names the missing signals key as 'the direct cause'."}, {"text": "Provides a concrete fix that adds a signals map (e.g. signals: { modalClosed: '_handleModalClosed' }) to the Modal template entry in Parent", "passed": true, "evidence": "outputs/Parent.js line 13 adds `signals: { modalClosed: '_handleModalClosed' },` inside the Modal template entry, exactly matching the expectation's example. response.md shows the identical diff in its 'Fix' section and step 1 of the fix list, and the fix is also documented as the 'Fix applied' step in the transcript."}, {"text": "Recognizes that the $modalClosed() method inside the Modal state is unrelated dead code because $-prefixed names are the fireAncestors() convention, not the signal() convention, and Modal never calls fireAncestors", "passed": true, "evidence": "response.md, 'A second, related problem' section: \"$modalClosed() (inside the Modal state) uses the $-prefixed naming convention, which is how fireAncestors() targets are named, not how direct signal() targets are named. Since Modal (the component) calls this.signal('modalClosed') \u00e2\u20ac\u201d not this.fireAncestors('$modalClosed') \u00e2\u20ac\u201d this handler was never going to be invoked no matter what the template said. It's dead code...\" Transcript step 3 has matching reasoning drawn from references/communication.md."}, {"text": "Does not claim the bug is purely a _handleModalClosed vs $modalClosed naming mismatch without also identifying the missing signals map, since renaming alone would not fix the bug", "passed": true, "evidence": "The output consistently frames the missing signals map as the 'Root cause' / 'primary bug' and treats the $modalClosed naming mismatch as a separate, secondary dead-code issue that was 'never going to connect regardless of the signals map fix' (transcript step 5). The applied fix adds the signals map (not a rename) and removes the dead $modalClosed handler rather than renaming it to _handleModalClosed, so no version of the diagnosis reduces the bug to a naming mismatch alone."}, {"text": "Does not misattribute the bug to something unrelated to Lightning's signal-wiring contract, like a DOM-style addEventListener pattern or a focus-delegation issue, as the primary cause", "passed": true, "evidence": "No DOM/addEventListener framing appears anywhere. A focus-delegation (_getFocused) point is raised, but only in a final section explicitly titled 'One more thing worth checking (not shown in the provided files)', and the transcript explicitly scopes it as 'a \"check this too\" note rather than the primary fix, since the reported symptom ... point[s] squarely at the missing signals map.' The primary/root cause throughout is unambiguously the missing signals map."}], "notes": []}, {"eval_id": 1, "eval_name": "poster-row-focus-navigation", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 164.619, "tokens": 54277, "tool_calls": 9, "errors": 0}, "expectations": [{"text": "The component implements _getFocused() returning the currently focused poster child (Lightning's real focus delegation mechanism)", "passed": true, "evidence": "PosterRow.js does NOT implement _getFocused() at all \u00e2\u20ac\u201d confirmed by full read of the file (no occurrence of `_getFocused` anywhere in outputs/PosterRow.js). The transcript (section 4) and response.md explicitly document a deliberate design decision NOT to delegate focus to per-poster children: 'keep PosterRow itself as the focus leaf (no _getFocused() override delegating to a child), track _selectedIndex on the row, and have the row directly patch the currently-selected tile's visual state.' The stated rationale is that the poster tiles in this specific input file are plain template-object children (rect/Image/Title, no `type:` pointing at a Component subclass) rather than Lightning.Component instances, so Lightning would not invoke _focus()/_unfocus() lifecycle hooks on them even if _getFocused() returned one \u00e2\u20ac\u201d making literal child delegation a no-op rather than a working mechanism. Instead, PosterRow implements a full, coherent row-level focus/navigation model: _focus()/_unfocus() (fired when the row itself enters/leaves the focus path), _handleLeft/_handleRight (bounds-checked _selectedIndex updates), and _handleEnter (real action). response.md also explicitly documents the expected integration contract for a parent: `_getFocused() { return this.tag('PosterRow'); }`, i.e. this component is designed to BE the child that a parent delegates to via real _getFocused() delegation, just not itself delegating further down to non-Component tiles. Per the grading instructions' explicit guidance for this expectation, this is judged as a legitimate alternative pattern rather than an automatic fail, because the row does correctly serve as a real, working focus target with a complete navigation model (index tracking, bounds checks, visual feedback, Enter action) \u00e2\u20ac\u201d there is no case where the app would be left without working navigation. PASS is given on that basis, but graders/skill-authors should note the literal expectation text (child delegation via _getFocused()) was NOT satisfied \u00e2\u20ac\u201d see eval_feedback.", "note": "Row-level focus management, not child _getFocused() delegation. See eval_feedback for why this expectation's wording may need revision."}, {"text": "Left/right navigation is implemented via Lightning key-handler methods (e.g. _handleLeft/_handleRight) that update a tracked selected index, not via DOM event listeners", "passed": true, "evidence": "PosterRow.js defines `_handleLeft()` (lines 70-74) and `_handleRight()` (lines 76-80), both of which call `_select(index)` which mutates `this._selectedIndex` (line 91). No DOM APIs are used anywhere (`grep` of the file shows no `addEventListener`, `document`, or any browser API). Navigation is driven purely through Lightning's key-handler method convention, consistent with references/focus-and-input.md's documented 'Handle phase, bottom-up' key routing (`_handle{KeyName}()`)."}, {"text": "Pressing Enter logs the selected movie's title to the console (via _handleEnter on the row or its child, or an equivalent delegation)", "passed": true, "evidence": "PosterRow.js lines 82-87: `_handleEnter() { const movie = this._movies && this._movies[this._selectedIndex]; if (movie) { console.log(movie.title); } }`. This directly logs the selected movie's title and guards against an empty/undefined movies list."}, {"text": "No DOM/CSS/React syntax is introduced (no addEventListener, document, className, style={{}}, JSX)", "passed": true, "evidence": "Full read of outputs/PosterRow.js shows only Lightning.Component conventions: static _template(), patch(), tag(), smooth transitions, and plain JS class methods. No occurrences of addEventListener, document, className, style={{}}, or JSX syntax anywhere in the file or in response.md's embedded code block."}, {"text": "The selected index is bounds-checked so navigating past the first/last poster doesn't throw or select an out-of-range item", "passed": true, "evidence": "`_handleLeft()`: `if (!this._movies || !this._movies.length) return false; if (this._selectedIndex <= 0) return false;` before decrementing. `_handleRight()`: `if (!this._movies || !this._movies.length) return false; if (this._selectedIndex >= this._movies.length - 1) return false;` before incrementing. Both guard the empty-list case and the boundary case, and `_select()` is only reached with an already-validated in-range index, so `_updateItemVisual` never receives an out-of-range index from the arrow-key path."}], "notes": []}, {"eval_id": 2, "eval_name": "button-js-to-ts-template-spec", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 97.958, "tokens": 43769, "tool_calls": 6, "errors": 0}, "expectations": [{"text": "Defines a TypeScript TemplateSpec type/interface (e.g. extends Lightning.Component.TemplateSpec) rather than typing the whole class as any", "passed": true, "evidence": "Button.ts lines 9-19: `export interface ButtonTemplateSpec extends Lightning.Component.TemplateSpec { Background: { color: number }; Label: { text: { text: string; fontSize: number } }; }`. The class extends `Lightning.Component<ButtonTemplateSpec>` (line 25) and `static _template()` is annotated to return `Lightning.Component.Template<ButtonTemplateSpec>` (line 34), so the interface is actually wired into the class rather than being decorative. No `any` appears anywhere in the file (grep for `any` returned zero matches)."}, {"text": "Template child refs (Background, Label) use PascalCase and are distinguished from camelCase properties (onEnter, label) per Lightning's TS conventions", "passed": true, "evidence": "Interface children `Background`/`Label` (Button.ts lines 10, 13) and the class's typed ref fields `readonly Background`/`readonly Label` (lines 31-32) are PascalCase, matching the original JS ref names (`this.tag('Background')`, `this.tag('Label')`). The component's own API surface, `set onEnter(cb)` (line 56) and `set label(value)` (line 60), stays camelCase. This mirrors the naming split documented in the skill's own reference/typescript.md ('Properties: lower-case keys... Children: upper-case keys')."}, {"text": "The onEnter callback prop has a real function type (e.g. () => void), not any", "passed": true, "evidence": "Line 22: `export type ButtonOnEnterCallback = () => void;`. Applied to the private backing field (`private _onEnter: ButtonOnEnterCallback | null = null;`, line 28) and the setter parameter (`set onEnter(cb: ButtonOnEnterCallback | null)`, line 56) \u00e2\u20ac\u201d a real, callable function type, not `any`."}, {"text": "Uses getByRef() (or another typed accessor) rather than untyped tag() calls for accessing typed children", "passed": true, "evidence": "Lines 31-32: `readonly Background = this.getByRef('Background')!;` and `readonly Label = this.getByRef('Label')!;`, then used at every access site (`this.Background.patch(...)` in `_focus`/`_unfocus`, `this.Label.patch(...)` in the `label` setter). A grep of the file for `tag(` found zero matches \u00e2\u20ac\u201d every previous `this.tag('X')` call from the original JS was replaced."}, {"text": "The resulting file is valid TypeScript syntax (.ts extension, class property type annotations, no leftover untyped any on the public props)", "passed": true, "evidence": "File is `outputs/Button.ts`. Braces/parens balance and the class body reads as syntactically well-formed TS: import, interface, type alias, a class with `extends`/`implements`, typed fields (`private _onEnter: ButtonOnEnterCallback | null`), typed setter parameters (`cb: ButtonOnEnterCallback | null`, `value: string`), and `override` on all five overridden members (`_template`, `_init`, `_focus`, `_unfocus`, `_handleEnter`). No `any` appears anywhere. Note: no `tsc`/`node` toolchain was available in this environment to run an actual compile (neither `tsc` nor `node` was found on PATH), so this is a structural/visual syntax check rather than a verified compiler pass \u00e2\u20ac\u201d the `@lightningjs/core` types (`getByRef`, `ImplementTemplateSpec`) were not installed to type-check against either."}], "notes": []}, {"eval_id": 3, "eval_name": "modal-signal-handler-bug", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.0, "passed": 0, "failed": 5, "total": 5, "time_seconds": 214.573, "tokens": 53399, "tool_calls": 9, "errors": 0}, "expectations": [{"text": "Identifies that this.signal() requires the parent to declare a signals (or passSignals) map at the template site where the child is instantiated, and that the Modal entry in Parent's template has no such map", "passed": false, "evidence": "Neither the transcript nor outputs/response.md ever mentions a `signals:` (or `passSignals:`) map. The transcript instead asserts (Step 2): \"Signals ... this.signal(event, ...args) ... It looks up a method named $<event> on the owner (this.cparent), resolved through whichever state is currently active on that owner.\" response.md repeats this model verbatim (\"signal(event, ...args) uses a completely different lookup: it calls $<event> on the owner\"). The proposed corrected Parent.js template is `Modal: { type: Modal, visible: false }` with no `signals` key at all. The missing-map requirement is never surfaced."}, {"text": "Provides a concrete fix that adds a signals map (e.g. signals: { modalClosed: '_handleModalClosed' }) to the Modal template entry in Parent", "passed": false, "evidence": "outputs/Parent.js (the delivered fix) keeps the template entry as `Modal: { type: Modal, visible: false }` \u00e2\u20ac\u201d no `signals` key is added anywhere. The two changes actually made are adding `_getFocused()` to the Modal state and deleting `_handleModalClosed()` in favor of the pre-existing `$modalClosed()`. No signals map is proposed."}, {"text": "Recognizes that the $modalClosed() method inside the Modal state is unrelated dead code because $-prefixed names are the fireAncestors() convention, not the signal() convention, and Modal never calls fireAncestors", "passed": false, "evidence": "The transcript and response.md conclude the exact opposite: they treat `$modalClosed()` as the correct, already-working signal handler (\"Your code already has a correctly named handler \u00e2\u20ac\u201d $modalClosed() inside the Modal state \u00e2\u20ac\u201d and that is the one actually responsible...\", response.md lines 45-47) and instead call `_handleModalClosed()` the dead code. `fireAncestors()` is never mentioned anywhere in the transcript or outputs."}, {"text": "Does not claim the bug is purely a _handleModalClosed vs $modalClosed naming mismatch without also identifying the missing signals map, since renaming alone would not fix the bug", "passed": false, "evidence": "response.md's \"Bug 2\" section is framed explicitly as a naming-convention mismatch: \"`_handleModalClosed` is the wrong naming convention for a signal handler ... That's not a focus problem, it's a naming mismatch.\" The prescribed fix is to delete `_handleModalClosed()` and fold its console.log into the existing `$modalClosed()` \u00e2\u20ac\u201d i.e., exactly the rename/consolidate-by-name fix the expectation says is insufficient, with no signals map ever added alongside it."}, {"text": "Does not misattribute the bug to something unrelated to Lightning's signal-wiring contract, like a DOM-style addEventListener pattern or a focus-delegation issue, as the primary cause", "passed": false, "evidence": "response.md explicitly labels the focus-delegation issue as the primary cause: \"## Bug 1 (the root cause): the modal never receives the Back key at all\" ... \"Parent never overrides _getFocused() ... focus never actually moves to this.tag('Modal') ... so this.signal('modalClosed') is never called\". The transcript likewise states \"This is the root-cause bug: the notification never even gets sent,\" attributing root cause to missing _getFocused() delegation \u00e2\u20ac\u201d precisely the kind of unrelated-to-signal-wiring-contract primary attribution this expectation flags."}], "notes": []}, {"eval_id": 1, "eval_name": "poster-row-focus-navigation", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 108.117, "tokens": 44416, "tool_calls": 6, "errors": 0}, "expectations": [{"text": "The component implements _getFocused() returning the currently focused poster child (Lightning's real focus delegation mechanism)", "passed": true, "evidence": "outputs/PosterRow.js lines 85-87: `_getFocused() { return this._posterItems[this._selectedIndex] || this; }`. This is the strong/idiomatic form of the pattern: each movie tile was extracted into its own `Poster extends Lightning.Component` subclass (lines 8-45), and `_getFocused()` delegates to the actual child instance at the tracked index (falling back to `this` only when the list is empty, so Lightning always gets a valid focus target). This is real per-child delegation, not the simpler self-focus fallback the eval brief flagged as acceptable \u00e2\u20ac\u201d so it clears the bar either way."}, {"text": "Left/right navigation is implemented via Lightning key-handler methods (e.g. _handleLeft/_handleRight) that update a tracked selected index, not via DOM event listeners", "passed": true, "evidence": "outputs/PosterRow.js lines 89-101: `_handleLeft()` decrements `this._selectedIndex` (guarded by `> 0`) and `_handleRight()` increments it (guarded by `< this._posterItems.length - 1`); both call `this._refocus()` afterward to re-trigger Lightning's focus/unfocus lifecycle. No `addEventListener`, `document`, or any DOM API appears anywhere in the file."}, {"text": "Pressing Enter logs the selected movie's title to the console (via _handleEnter on the row or its child, or an equivalent delegation)", "passed": true, "evidence": "outputs/PosterRow.js lines 103-108: `_handleEnter() { const movie = this._movies[this._selectedIndex]; if (movie) { console.log(movie.title); } }`, implemented on `PosterRow` and guarded against an empty movie list."}, {"text": "No DOM/CSS/React syntax is introduced (no addEventListener, document, className, style={{}}, JSX)", "passed": true, "evidence": "Full read of outputs/PosterRow.js confirms no `addEventListener`, `document`, `className`, `style={{`, or JSX syntax anywhere. All styling is done via Lightning's own `_template()`/`patch()` object conventions (color, w/h, smooth transitions), consistent with the original input file's idioms."}, {"text": "The selected index is bounds-checked so navigating past the first/last poster doesn't throw or select an out-of-range item", "passed": true, "evidence": "`_handleLeft()` only decrements when `this._selectedIndex > 0`; `_handleRight()` only increments when `this._selectedIndex < this._posterItems.length - 1`. Traced the empty-list edge case: with 0 posters, `_posterItems.length - 1` is `-1`, and since `_selectedIndex` starts at `0`, the `_handleRight` guard `0 < -1` is false, so no increment/throw occurs. `_handleEnter` additionally guards with `if (movie)` before logging."}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 153.7983, "stddev": 11.2, "min": 142.254, "max": 164.619}, "tokens": {"mean": 54421.3333, "stddev": 2700.3945, "min": 51796, "max": 57191}}, "without_skill": {"pass_rate": {"mean": 0.6667, "stddev": 0.5774, "min": 0.0, "max": 1.0}, "time_seconds": {"mean": 140.216, "stddev": 64.5951, "min": 97.958, "max": 214.573}, "tokens": {"mean": 47194.6667, "stddev": 5382.84, "min": 43769, "max": 53399}}, "delta": {"pass_rate": "+0.33", "time_seconds": "+13.6", "tokens": "+7227"}}, "notes": ["modal-signal-handler-bug is the only strongly discriminating eval here: with_skill 5/5 vs without_skill 0/5. Without the skill, the model confidently inverted Lightning's own dispatch rule -- it believes signal() looks up a $<name> method directly and that $-prefixed names are the signal() convention, when $-prefixed names actually belong to fireAncestors(). That wrong model led it to treat the pre-existing (actually-dead) $modalClosed() as the working handler and to propose a fix that would not have solved the user's reported bug. The skill's references/communication.md states the real contract plainly, and the with-skill run quoted it almost verbatim to reach the correct root cause (a missing `signals` map).", "poster-row-focus-navigation and button-js-to-ts-template-spec scored 5/5 in BOTH configurations, so as written they don't discriminate skill-present vs skill-absent behavior for this model -- it already produces idiomatic Lightning v2 focus-handling and TemplateSpec typing from general training knowledge. That's a useful finding in itself (this model needs the skill least for 'default-path' tasks it already knows well), but it means these two evals mostly stress-test whether the skill's guidance *matches* already-good defaults rather than whether it *changes* behavior. Consider evolving them toward less mainstream corners of Lightning v2 (e.g. nested _states(), passSignals forwarding, texture/performance tradeoffs) where a baseline model is more likely to guess wrong.", "The poster-row-focus-navigation with_skill run reported 54277 tokens versus its without_skill counterpart's 5574 and the other evals' 4500-6000 range -- a ~10x outlier. This looks like a data-capture artifact (that run's grading.json had a null self-reported timing/token field, so the aggregator fell back to the executor's whole-task total_tokens from the task notification, which is a different and larger unit than the output_chars proxy used elsewhere) rather than a genuine 10x cost difference. Treat the with_skill token mean (21930, stddev 28014) as unreliable until token accounting is made consistent across runs; don't read the current with_skill/without_skill token delta at face value.", "Grader feedback (not a hard failure) on two poster-row expectations: 'implements _getFocused() returning the currently focused poster child' assumes per-child Component delegation as the only valid pattern, but a legitimate alternative -- keeping the row itself as the focus leaf and manually tracking a selected index -- also produces working navigation and shows up in both configurations' outputs. Consider loosening this assertion's wording (or adding a second acceptable-pattern clause) before reusing it in iteration 2, and separately, the skill's own focus-and-input.md apparently states a rail/list component should 'always include the _getFocused() override' without carving out this row-as-leaf exception -- worth checking that reference file's wording during the next skill revision.", "Time overhead from loading the skill was modest and did not show a runaway cost: with_skill mean 153.8s vs without_skill mean 140.2s (+13.6s, skewed upward by the without_skill modal-bug run alone taking 214.6s -- the longest run of all six -- while still landing on a confidently wrong answer, i.e. extra time did not substitute for the missing domain knowledge)."]}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>
