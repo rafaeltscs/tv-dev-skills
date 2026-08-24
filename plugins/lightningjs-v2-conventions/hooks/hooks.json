@@ -1,0 +1,15 @@
+{
+  "description": "Loads the non-negotiable LightningJS v2 conventions once per session, so they're in context even before the conventions skill triggers.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat \"${CLAUDE_PLUGIN_ROOT}/hooks/core-conventions.md\""
+          }
+        ]
+      }
+    ]
+  }
+}
