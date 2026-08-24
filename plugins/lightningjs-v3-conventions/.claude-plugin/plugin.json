@@ -1,0 +1,10 @@
+{
+  "name": "lightningjs-v3-conventions",
+  "description": "Conventions for LightningJS 3 / Blits TV apps. Placeholder — not yet filled in.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Rafael"
+  },
+  "license": "MIT",
+  "keywords": ["lightningjs", "blits", "tv", "ott"]
+}

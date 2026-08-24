@@ -1,0 +1,10 @@
+{
+  "name": "lightningjs-v2-conventions",
+  "description": "Conventions and patterns for LightningJS Core v2 TV/OTT development.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Rafael"
+  },
+  "license": "MIT",
+  "keywords": ["lightningjs", "tv", "ott", "typescript"]
+}

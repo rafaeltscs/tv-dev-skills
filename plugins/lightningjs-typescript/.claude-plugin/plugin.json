@@ -1,0 +1,10 @@
+{
+  "name": "lightningjs-typescript",
+  "description": "TypeScript typing conventions for Lightning components (Template Specs, Type Configs, signal typing). Placeholder.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Rafael"
+  },
+  "license": "MIT",
+  "keywords": ["lightningjs", "typescript", "tv", "ott"]
+}
