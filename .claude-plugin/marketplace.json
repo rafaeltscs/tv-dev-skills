@@ -3,49 +3,14 @@
   "owner": {
     "name": "Rafael"
   },
-  "description": "Conventions, focus/input patterns, and platform knowledge for TV/OTT app development.",
+  "description": "Skills for TV/OTT app development, as an installable Claude Code plugin.",
   "plugins": [
     {
-      "name": "lightningjs-v2-conventions",
-      "source": "./plugins/lightningjs-v2-conventions",
-      "description": "Conventions and patterns for LightningJS Core v2 (TypeScript/JS) TV apps.",
+      "name": "tv-dev-skills",
+      "source": "./",
+      "description": "Conventions, focus/input patterns, and platform knowledge for TV/OTT app development (LightningJS and beyond).",
       "category": "frontend",
-      "keywords": ["lightningjs", "tv", "ott", "typescript"]
-    },
-    {
-      "name": "lightningjs-v3-conventions",
-      "source": "./plugins/lightningjs-v3-conventions",
-      "description": "Conventions for LightningJS 3 / Blits TV apps. Placeholder — not yet filled in.",
-      "category": "frontend",
-      "keywords": ["lightningjs", "blits", "tv", "ott"]
-    },
-    {
-      "name": "lightningjs-typescript",
-      "source": "./plugins/lightningjs-typescript",
-      "description": "TypeScript typing conventions for Lightning components (Template Specs, Type Configs, signal typing). Placeholder.",
-      "category": "frontend",
-      "keywords": ["lightningjs", "typescript", "tv", "ott"]
-    },
-    {
-      "name": "tv-focus-and-navigation",
-      "source": "./plugins/tv-focus-and-navigation",
-      "description": "Framework-agnostic remote-control focus and navigation patterns (grids, rails, modals). Placeholder.",
-      "category": "frontend",
-      "keywords": ["focus", "navigation", "remote-control", "tv"]
-    },
-    {
-      "name": "tv-platform-quirks",
-      "source": "./plugins/tv-platform-quirks",
-      "description": "Platform-specific lifecycle, key codes, and packaging quirks for Tizen, webOS, Fire TV, and Vizio/SmartCast. Framework-agnostic. Placeholder.",
-      "category": "platform",
-      "keywords": ["tizen", "webos", "fire-tv", "vizio", "tv"]
-    },
-    {
-      "name": "tv-performance-constraints",
-      "source": "./plugins/tv-performance-constraints",
-      "description": "Framework-agnostic TV hardware performance concepts: texture memory, GC pressure, lazy loading. Placeholder.",
-      "category": "performance",
-      "keywords": ["performance", "tv", "memory", "gc"]
+      "keywords": ["tv", "ott", "lightningjs", "typescript"]
     }
   ]
 }
