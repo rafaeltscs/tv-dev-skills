@@ -14,4 +14,5 @@ in producing this material.
 
 If you fork or extend this repo with your own team's internal conventions,
 keep employer-specific code, credentials, asset paths, and business logic
-out of it — see the "Keeping this project-agnostic" section of the README.
+out of it — see the "Keeping this project-agnostic" section of
+[AGENTS.md](AGENTS.md).
