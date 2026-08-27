@@ -38,7 +38,7 @@ being touched:
 | TypeScript: Template Specs, Type Configs, typing an existing JS component | `references/typescript.md` |
 | Textures (images, text, rect, gradients), performance of images | `references/textures-and-performance.md` |
 | Signals, `fireAncestors`, parent/child communication | `references/communication.md` |
-| Component States (`_states()`, `_setState`, nested states) | `references/states.md` |
+| Component States (`_states()`, `_setState`, nested states) — see also non-negotiable #8 below before reaching for this | `references/states.md` |
 
 Each reference file is self-contained with runnable-shape code examples.
 
@@ -67,6 +67,13 @@ Each reference file is self-contained with runnable-shape code examples.
    hardware when they come up (texture reuse, avoiding per-frame
    allocations in animations, avoiding unnecessary Flexbox on
    frequently-resizing containers) — see `references/textures-and-performance.md`.
+8. **Avoid `_states()`/`_setState()` by default.** It adds indirection
+   (state subclasses silently overriding methods) that's easy to over-apply
+   for cases a plain conditional or separate method would handle more
+   simply, and it's v2-only — Lightning 3/Blits has no equivalent, so code
+   built around it doesn't carry forward. Reach for it only when a
+   component genuinely has multiple full behavioral modes that a flat
+   conditional would make harder to read — see `references/states.md`.
 
 ## What this skill does not cover (yet)
 

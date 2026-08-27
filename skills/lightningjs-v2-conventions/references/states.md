@@ -4,6 +4,26 @@ States let a component swap out a set of behavior overrides (handlers,
 `_getFocused()`, appearance) based on "what mode it's in," without
 sprinkling `if (this.mode === ...)` checks through every method.
 
+## Prefer to avoid this for new components
+
+`_states()` is real, documented API (below), but default to **not** reaching
+for it:
+
+- It adds a layer of indirection — state subclasses silently overriding
+  methods — that's easy to over-apply for cases a plain `if` or a separate
+  method would handle more simply and more traceably.
+- It's **v2-only**. Lightning 3 / Blits has no `_states()`/`_setState()`
+  equivalent — Blits' "state" is an unrelated concept (a reactive data
+  object you mutate directly, similar to Vue's `data()`), not a
+  behavior-mode switch ([Blits component state docs](https://lightningjs.io/v3-docs/blits/components/component_state.html)).
+  Code built around v2 states doesn't carry any of that structure forward
+  if the app ever migrates.
+
+Reach for `_states()` only when a component genuinely has multiple full
+behavioral modes (distinct `_handle*` overrides, different `_getFocused()`
+targets, different appearance, etc.) that a flat conditional would make
+*harder* to read, not simpler. When in doubt, don't.
+
 ## Defining states
 
 ```js
@@ -60,8 +80,9 @@ class Editing extends this {
 
 ## States + focus
 
-The most common production use of states is focus delegation — see
-`focus-and-input.md`. Each state typically overrides `_getFocused()` to
+When states are genuinely justified, the most common production use is
+focus delegation — see `focus-and-input.md`. Each state typically overrides
+`_getFocused()` to
 point at whichever sub-tree should be active while in that mode:
 
 ```js

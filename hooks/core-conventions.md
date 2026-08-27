@@ -18,6 +18,10 @@ for any generated Lightning code:
 7. **Call out performance-sensitive choices** for low-end TV hardware
    (texture reuse, avoiding per-frame allocations, avoiding unnecessary
    Flexbox on frequently-resizing containers).
+8. **Avoid `_states()`/`_setState()` by default** — it adds indirection
+   that's usually unnecessary, and it's v2-only (no equivalent in Lightning
+   3/Blits). Only use it for components with genuinely multiple full
+   behavioral modes.
 
 For full detail, read the `lightningjs-v2-conventions` skill's reference
 files before writing non-trivial Lightning code.

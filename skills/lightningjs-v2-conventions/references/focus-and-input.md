@@ -22,8 +22,21 @@ is pressed, or `_refocus()` is called explicitly.
 
 ## Delegating focus
 
-The idiomatic pattern is to delegate via **Component States** (see
-`states.md`), one state per "focus mode":
+Default to a plain `_getFocused()` override on the component — it just
+returns whichever child should currently be focused:
+
+```js
+_getFocused() {
+  return this._isEditing ? this.tag('EditPanel') : this.tag('Buttons');
+}
+```
+
+Only reach for **Component States** (see `states.md`) to switch
+`_getFocused()` targets when a component has several genuinely distinct
+full focus/behavior modes, not as the default way to delegate focus — states
+add indirection that a plain override or tracked index (below) usually
+doesn't need, and the pattern is v2-only (no equivalent in Lightning
+3/Blits). If that's still the right call:
 
 ```js
 static _states() {
