@@ -170,3 +170,9 @@ untyped against `T` and have subclasses assert the more specific template
 type after calling `super._template()`. Reach for `references/components-and-templates.md`
 for the plain (non-generic) version of Template Specs first if this doesn't
 come up.
+
+## Not yet covered
+
+- `this`-context differences between static/instance methods and Component
+  States classes — worth its own section once there's a concrete case to
+  document against.

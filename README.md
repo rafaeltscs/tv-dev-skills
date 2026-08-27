@@ -41,7 +41,6 @@ tv-dev-skills/
 │   │   ├── SKILL.md
 │   │   └── references/
 │   ├── lightningjs-v3-conventions/   # planned — Lightning 3 / Blits
-│   ├── lightningjs-typescript/       # planned — Lightning TS typing conventions
 │   ├── tv-focus-and-navigation/      # planned — remote nav & focus, framework-agnostic
 │   ├── tv-performance-constraints/   # planned — low-end TV hardware constraints
 │   └── tv-platform-quirks/           # planned — Tizen/webOS/Vizio/Fire TV matrix
@@ -65,7 +64,16 @@ manifest points to.
 If the skill count grows large enough that a flat `skills/` listing gets
 hard to scan, consider grouping into category subfolders the way Matt
 Pocock's repo does (`skills/engineering/`, `skills/productivity/`) — not
-worth doing yet with one real skill and five placeholders.
+worth doing yet with one real skill and four placeholders.
+
+There's deliberately no separate `lightningjs-typescript` skill — its
+planned scope (Template Specs, Type Configs, `getByRef` vs. `tag()`, signal
+typing) is already covered by `lightningjs-v2-conventions`'s
+[`typescript.md`](skills/lightningjs-v2-conventions/references/typescript.md).
+A cross-cutting TS-typing skill would only earn its place once there's a
+second framework (e.g. `lightningjs-v3-conventions`) with real typing
+content to generalize across — until then it'd just be a second, drifting
+copy of the same guidance.
 
 ## Skills
 
@@ -73,7 +81,6 @@ worth doing yet with one real skill and five placeholders.
 |---|---|---|
 | [`lightningjs-v2-conventions`](skills/lightningjs-v2-conventions/) | **Done** | Templates, components, states, signals/events, the render tree vs. DOM distinction, TS Template Specs, focus/input, textures & performance. |
 | [`lightningjs-v3-conventions`](skills/lightningjs-v3-conventions/) | Placeholder | Lightning 3 / Blits — kept fully separate from v2 since the two frameworks don't share syntax. |
-| [`lightningjs-typescript`](skills/lightningjs-typescript/) | Placeholder | Typing conventions for Lightning components (Template Specs, Type Configs, signal typing, `this` contexts), currently living inside `lightningjs-v2-conventions`'s `typescript.md` reference until this is built out on its own. |
 | [`tv-focus-and-navigation`](skills/tv-focus-and-navigation/) | Placeholder | Remote-navigation and focus-management patterns (focus delegation, key handling, grids/rails/modals) at a level above any single framework. |
 | [`tv-performance-constraints`](skills/tv-performance-constraints/) | Placeholder | Texture memory limits, GC pressure, image sizing/caching, lazy loading — the rules that keep generated code respecting low-end TV hardware from the start. |
 | [`tv-platform-quirks`](skills/tv-platform-quirks/) | Placeholder | The Tizen/webOS/Vizio/Fire TV support matrix: lifecycle events, key codes, DRM/player quirks, packaging. |
