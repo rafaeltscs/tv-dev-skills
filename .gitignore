@@ -1,0 +1,8 @@
+# Eval review viewer — a generated build artifact. It embeds a copy of
+# every run's output files and is fully regenerable from benchmark.json +
+# the run directories + the viewer template, so it doesn't belong in git.
+eval-workspace/**/review.html
+
+# Per-iteration review feedback captured from the viewer UI. Transient
+# working state for the next iteration, not a durable record.
+eval-workspace/**/feedback.json
