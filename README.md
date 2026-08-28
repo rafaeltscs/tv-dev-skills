@@ -29,12 +29,9 @@ are in effect even before a skill triggers for a specific prompt.
 **One-off, in a single project:**
 
 ```
-/plugin marketplace add <your-github-username>/tv-dev-skills
+/plugin marketplace add rafaeltscs/tv-dev-skills
 /plugin install tv-dev-skills@tv-dev-skills
 ```
-
-(Replace `<your-github-username>/tv-dev-skills` with this repo's actual
-GitHub path.)
 
 **For a team, so it's automatic on clone:**
 
@@ -44,7 +41,7 @@ Commit this to the project's `.claude/settings.json`:
 {
   "extraKnownMarketplaces": {
     "tv-dev-skills": {
-      "source": { "source": "github", "repo": "<your-github-username>/tv-dev-skills" }
+      "source": { "source": "github", "repo": "rafaeltscs/tv-dev-skills" }
     }
   },
   "enabledPlugins": {
