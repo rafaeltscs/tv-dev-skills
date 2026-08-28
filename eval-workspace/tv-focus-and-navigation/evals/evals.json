@@ -1,0 +1,53 @@
+{
+  "skill_name": "tv-focus-and-navigation",
+  "evals": [
+    {
+      "id": 1,
+      "name": "rail-stack-vertical-navigation",
+      "prompt": "This is a TV app driven by a remote (up/down/left/right/OK/Back). The home screen is a vertical stack of horizontal rails. Left/right moves between cards inside a rail fine, but up/down does nothing useful — I can't move focus from one rail to the next, and when I mash up/down the current rail just jumps back to its first card. Please fix the navigation so up/down moves focus between rails, each rail comes back to the card the user last had focused on it (not card 0), and the view scrolls to follow focus. `rail.js` and `home-screen.js` are attached; `_framework.md` documents the tiny component framework they use.",
+      "files": ["evals/files/_framework.md", "evals/files/rail.js", "evals/files/home-screen.js", "evals/files/widgets.js"],
+      "expected_output": "Rail no longer consumes up/down: handleUp/handleDown either are removed or return false at the rail's top/bottom so the key bubbles to HomeScreen. HomeScreen gains a tracked row index plus handleUp/handleDown that move it (bounds-checked) and getFocused() returns children[rowIndex] instead of a hardcoded children[0]. Each Rail keeps its own last-focused card index across focus leaving and returning (its existing this.index already persists on the instance — the fix is to stop resetting it to 0 in handleUp/handleDown). handleLeft/handleRight on the Rail get first/last bounds checks. On focus change the code scrolls the rail horizontally and the screen vertically to keep the focused element visible (a scrollIntoView-style call or comment is fine). No DOM focus, tabindex, hover, or mouse-event handling is introduced.",
+      "assertions": [
+        "Rail stops consuming Up/Down: handleUp/handleDown are removed, or they return false (do not return true) at the rail's vertical edges so the key bubbles to the parent HomeScreen",
+        "HomeScreen owns vertical navigation: it tracks a row index and implements handleUp/handleDown that change it, rather than leaving vertical movement to the Rail",
+        "HomeScreen.getFocused() returns the currently focused rail (children[rowIndex]) instead of the hardcoded children[0]",
+        "Each Rail preserves its last-focused card index when focus leaves and returns — handleUp/handleDown no longer reset this.index to 0",
+        "Rail.handleLeft/handleRight are bounds-checked so navigating past the first or last card does not move to an out-of-range index (and ideally bubble at the edge)",
+        "HomeScreen row index is bounds-checked so Up on the first rail / Down on the last rail does not select an out-of-range rail",
+        "On focus change, the solution scrolls to keep the focused item visible (rail scrolls horizontally and/or screen scrolls vertically) rather than relying on the browser to scroll",
+        "No DOM focus model is introduced: no addEventListener, tabindex, :hover, element.focus(), or mouse/pointer event handling"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "modal-focus-trap-and-restore",
+      "prompt": "TV app, remote-driven. On the Settings screen, the \"Sign out\" button opens a confirm dialog as an overlay (see settings-row.js, confirm-dialog.js, app-shell.js, and _framework.md). Two bugs: (1) while the dialog is open I can still press left/right and watch focus move onto the Settings buttons behind the dialog; (2) after I pick Confirm or Cancel and the dialog closes, focus lands on the first button of the Settings screen instead of going back to the \"Sign out\" button I opened it from. How do I fix both?",
+      "files": ["evals/files/_framework.md", "evals/files/app-shell.js", "evals/files/settings-row.js", "evals/files/confirm-dialog.js", "evals/files/widgets.js"],
+      "expected_output": "Diagnoses bug 1 as a missing focus trap: the dialog / overlay layer must consume left/right (and up/down) at its edges so directional keys cannot reach the screen behind it. The current ConfirmDialog.handleLeft/handleRight return false at the edges, which lets the key bubble through AppShell to the Settings screen — the fix is to return true (swallow) at the edges while an overlay is open, or give AppShell an is-overlay-open boundary that stops directional keys. Diagnoses bug 2 as missing focus save/restore: AppShell.showOverlay should record the currently focused node (or focus path) before showing the overlay, and closeOverlay should move focus back to that exact node via refocus, rather than letting the Settings screen fall back to its default child. The fix must restore whatever was focused, not hardcode the Sign out button. Notes that the screen behind keeps its focus state but receives no key input while the overlay is open, and that initial focus should be placed on a dialog button when it opens (Cancel is a reasonable default for a confirm).",
+      "assertions": [
+        "Identifies bug 1 as a missing focus trap / boundary: while the overlay is open, directional keys must not be able to move focus to elements outside it",
+        "Explains the mechanism of bug 1: ConfirmDialog.handleLeft/handleRight returning false at the edges lets the key bubble through AppShell to the screen behind, so the edge case must consume the key (return true) or AppShell must block directional keys while an overlay is open",
+        "Identifies bug 2 as missing focus save/restore across the overlay lifecycle",
+        "Fix for bug 2 records the focused node/path before the overlay opens (in showOverlay or the opener) and restores focus to that same node in closeOverlay",
+        "The restore is generic (whatever had focus), not a hardcoded jump back to the Sign out button",
+        "Mentions that the overlay should take initial focus on open (e.g. onto a dialog button), and that the screen behind retains its focus state but gets no input while the overlay is open",
+        "Does not misdiagnose the primary cause as a DOM/event-listener issue, a CSS/z-index issue, or a framework API bug unrelated to focus trapping and restore"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "back-button-priority-stack",
+      "prompt": "In my TV app the Back button is wired to always call `router.pop()` (see nav-controller.js and its comments). Problems: from the home grid, Back exits the whole app with no warning; and when my filter drawer is open on a grid screen, Back navigates away from the screen instead of just closing the drawer. I want Back to do the nearest meaningful thing: if the filter drawer is open, close it; otherwise if there's a screen to go back to, go back one screen; and if we're already on the home screen with nothing to go back to, show a 'Press Back again to exit' confirmation instead of just quitting. How should I structure this?",
+      "files": ["evals/files/_framework.md", "evals/files/nav-controller.js"],
+      "expected_output": "Restructures Back handling as a nearest-first / priority chain: (1) if a transient UI like the filter drawer (or any open menu/keyboard) is open, close it and consume the event; (2) else if router.stackDepth > 1, router.pop(); (3) else (on the home screen, stackDepth === 1) show a 'press Back again within N seconds to exit' confirmation, tracking a timestamp / armed flag, and only exit on the second press. Explains that Back should be resolved along the focus path bottom-up (or via an explicit priority order) so exactly one handler consumes each press — the drawer's own handleBack should consume the event and not fall through to NavController. Notes that Back must never do nothing and never silently kill the app, and that a separate platform Home/Exit key (if present) is not intercepted. Code sketch updates NavController.handleBack (and/or shows the drawer consuming Back first).",
+      "assertions": [
+        "Back is resolved as a nearest-first priority chain, checking for open transient UI (the filter drawer) before falling through to router.pop()",
+        "When the filter drawer is open, Back closes it and consumes the event (returns true / does not also call router.pop())",
+        "At the root screen (router.stackDepth === 1) Back shows a confirm-to-exit (e.g. press-again-within-a-timeout, using a stored timestamp or armed flag) rather than calling pop() and exiting on the first press",
+        "Only one handler acts per Back press — the answer routes Back via the focus-path bubbling order or an explicit single priority chain, not multiple independent listeners that could double-fire",
+        "The design never leaves Back doing nothing and never exits the app silently on the first press from the root",
+        "Provides a concrete code sketch for the new NavController.handleBack (and/or the drawer consuming Back first) consistent with the described chain"
+      ]
+    }
+  ]
+}

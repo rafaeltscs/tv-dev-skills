@@ -1,0 +1,81 @@
+{
+  "expectations": [
+    {
+      "text": "Back is resolved as a nearest-first priority chain, checking for open transient UI (the filter drawer) before falling through to router.pop()",
+      "passed": true,
+      "evidence": "nav-controller.js defines `this.backLayers` as an ordered array, highest priority first: `filterDrawer` (isActive: () => this.filterDrawerOpen), then `screen` (isActive: () => this.router.stackDepth > 1, handle: router.pop()), then `exitGuard`. handleBack() walks the list and stops at the first active layer, so the drawer is checked before router.pop()."
+    },
+    {
+      "text": "When the filter drawer is open, Back closes it and consumes the event (returns true / does not also call router.pop())",
+      "passed": true,
+      "evidence": "Layer 1 `handle: () => this.closeFilterDrawer()`; the for-loop calls `layer.handle(); return true;` on the first active layer, so it never continues to the screen/pop layer. closeFilterDrawer() sets the flag false and calls refocus() — no router.pop(). response.md: 'Drawer open... layer 1 fires, closeFilterDrawer(), you stay exactly where you were. The screen never navigates.'"
+    },
+    {
+      "text": "At the root screen (router.stackDepth === 1) Back shows a confirm-to-exit (e.g. press-again-within-a-timeout, using a stored timestamp or armed flag) rather than calling pop() and exiting on the first press",
+      "passed": true,
+      "evidence": "exitGuard layer is reached only when stackDepth === 1 (screen layer inactive). confirmExit(): first press sets `this.exitArmed = true`, calls showExitHint() ('Press Back again to exit'), starts a 3000ms (EXIT_CONFIRM_MS) timer to disarm; only a second press while `exitArmed` calls exitApp(). First press never exits."
+    },
+    {
+      "text": "Only one handler acts per Back press — the answer routes Back via the focus-path bubbling order or an explicit single priority chain, not multiple independent listeners that could double-fire",
+      "passed": true,
+      "evidence": "handleBack() is a single `for (const layer of this.backLayers)` loop that `return true`s after the first active layer handles the key. response.md: 'the first layer that is currently active handles the key and you stop.' The alternative (drawer consuming its own Back) is presented as mutually exclusive with the registry entry ('anything a child consumes never reaches the registry'), not as a second parallel listener."
+    },
+    {
+      "text": "The design never leaves Back doing nothing and never exits the app silently on the first press from the root",
+      "passed": true,
+      "evidence": "handleBack() returns true in every path (including the fallthrough `return true` after the loop); exitGuard has `isActive: () => true` as an always-available last resort. First root Back arms the hint and starts a timer — app keeps running. response.md: 'The app never quits on a single press.'"
+    },
+    {
+      "text": "Provides a concrete code sketch for the new NavController.handleBack (and/or the drawer consuming Back first) consistent with the described chain",
+      "passed": true,
+      "evidence": "outputs/nav-controller.js is a complete rewrite: backLayers registry, handleBack() loop, openFilterDrawer/closeFilterDrawer, confirmExit/disarmExit/exitApp, showExitHint/hideExitHint, detach(), plus a getFocused() delegation note. response.md embeds the same code plus an alternative `FilterDrawer.handleBack()` sketch and a test list, all consistent with the 3-layer chain."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "total_tokens": 48902,
+    "duration_ms": 132095,
+    "total_duration_seconds": 132.1,
+    "executor_duration_seconds": 132.1
+  },
+  "claims": [
+    {
+      "claim": "Because layer 2 only claims Back when stackDepth > 1, 'on home with nothing to pop' falls through to the exit guard by construction",
+      "type": "factual",
+      "verified": true,
+      "evidence": "screen layer isActive is `this.router.stackDepth > 1`; at depth 1 it is skipped and the always-active exitGuard handles Back. No explicit 'am I on home' test is needed."
+    },
+    {
+      "claim": "Opening the drawer or a successful router.pop() disarms a pending exit confirmation",
+      "type": "factual",
+      "verified": true,
+      "evidence": "openFilterDrawer() calls this.disarmExit(); handleBack() calls disarmExit() for any non-exitGuard layer before handle(), covering the pop() path."
+    },
+    {
+      "claim": "handleBack() returns true in every branch so Back never escapes the controller",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Both the in-loop `return true` and the post-loop `return true` are present in nav-controller.js."
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "This baseline (no skill) run passes all 6 assertions with a design essentially equivalent to the with-skill run — ordered layer registry, armed-flag exit guard, single consuming loop, full code sketch. The assertion set does not discriminate skill value on this eval. (The target skill tv-focus-and-navigation is an unpopulated placeholder, so parity is expected, but the assertions are also loose enough that a competent baseline clears them.)"
+      },
+      {
+        "assertion": "At the root screen (router.stackDepth === 1) Back shows a confirm-to-exit...",
+        "reason": "Assertion accepts either a stored timestamp or an armed flag. The without-skill run uses an armed boolean + setTimeout (no monotonic timestamp), which is slightly weaker against a delayed/backgrounded timer than the with-skill run's timestamp comparison. If timestamp-based debouncing is the intended best practice, the assertion should require it rather than accept either."
+      },
+      {
+        "reason": "No assertion checks focus restoration / refocus() consistency after a layer closes. The without-skill run only sketches getFocused() ordering as a comment; a stricter assertion here would reveal depth differences between answers."
+      }
+    ],
+    "overall": "Assertions are sound for a design prompt but are fully satisfied by a strong baseline answer, so they currently measure general design competence more than skill contribution. Acceptable while the skill is a placeholder; add discriminating assertions (focus restoration, timestamp-based debounce, stacked-overlay ordering) before using this eval as a skill-value signal."
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "expectations": [
+    {
+      "text": "Identifies bug 1 as a missing focus trap / boundary: while the overlay is open, directional keys must not be able to move focus to elements outside it",
+      "passed": true,
+      "evidence": "response.md: 'Both bugs are the two halves of the same rule: a modal must trap focus while open and restore it on close.' and 'An overlay that owns focus is a boundary: directional keys must not be able to escape it until it's dismissed. This one is porous on all four edges.' Section titled 'Bug 1 — focus leaks onto the buttons behind the dialog'."
+    },
+    {
+      "text": "Explains the mechanism of bug 1: ConfirmDialog.handleLeft/handleRight returning false at the edges lets the key bubble through AppShell to the screen behind, so the edge case must consume the key (return true) or AppShell must block directional keys while an overlay is open",
+      "passed": true,
+      "evidence": "response.md quotes the original edge handlers with 'return false; // <-- at the left edge: NOT consumed' and explains 'At either edge the dialog returns false, so the key keeps bubbling up past the overlay to AppShell / the screen underneath, which is free to move focus among the Settings buttons'. Fix: 'return true unconditionally so nothing bubbles out' plus 'a backstop in AppShell: while this.overlay is set, its own handleUp/Down/Left/Right return true'. Also notes ConfirmDialog has no handleUp/handleDown."
+    },
+    {
+      "text": "Identifies bug 2 as missing focus save/restore across the overlay lifecycle",
+      "passed": true,
+      "evidence": "response.md: 'Nothing ever recorded which button opened the dialog, and nothing restores it.' and 'Capture the focus target before the overlay opens, restore it after it closes — the \"trap and restore\" pair.'"
+    },
+    {
+      "text": "Fix for bug 2 records the focused node/path before the overlay opens (in showOverlay or the opener) and restores focus to that same node in closeOverlay",
+      "passed": true,
+      "evidence": "app-shell.js: showOverlay() sets 'this._focusBeforeOverlay = this._captureFocusPath();' before assigning the overlay; closeOverlay() calls 'if (saved) this._restoreFocusPath(saved);' then refocus(). _captureFocusPath walks getFocused() from rootScreen recording {container, child} pairs; _restoreFocusPath re-points each container.index via children.indexOf(child)."
+    },
+    {
+      "text": "The restore is generic (whatever had focus), not a hardcoded jump back to the Sign out button",
+      "passed": true,
+      "evidence": "app-shell.js _restoreFocusPath iterates the captured path and sets 'container.index = container.children.indexOf(child)' for every container. No reference to 'Sign out' or a hardcoded index. response.md: 'I did this generically in AppShell so every overlay gets it ... regardless of Confirm vs. Cancel, and regardless of anything that nudged SettingsRow.index in between.' No change needed in settings-row.js."
+    },
+    {
+      "text": "Mentions that the overlay should take initial focus on open (e.g. onto a dialog button), and that the screen behind retains its focus state but gets no input while the overlay is open",
+      "passed": true,
+      "evidence": "Initial dialog focus discussed: 'Default the dialog to \"Cancel\" for a destructive prompt like sign-out ... I set this.index = 1 in the constructor; flip it back to 0 if the product wants Confirm pre-selected.' Screen behind: 'make sure the Settings buttons behind it don't still show a highlight (they keep their focus state but must not look focused)', and the trap fix ensures SettingsRow receives no key input while the overlay is open."
+    },
+    {
+      "text": "Does not misdiagnose the primary cause as a DOM/event-listener issue, a CSS/z-index issue, or a framework API bug unrelated to focus trapping and restore",
+      "passed": true,
+      "evidence": "Diagnosis is entirely focus-path/key-bubbling and focus save-restore. The only visual note ('don't still show a highlight') is explicitly flagged as 'not required for the two bugs'. No claim of a DOM listener, z-index, or framework API defect."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "total_tokens": 67356,
+    "duration_ms": 187964,
+    "total_duration_seconds": 188.0
+  },
+  "claims": [
+    {
+      "claim": "ConfirmDialog.handleLeft/handleRight originally return false at the edges, letting the key bubble",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Matches the stated fixture facts; response reproduces the original edge branches returning false."
+    },
+    {
+      "claim": "AppShell.getFocused() returns this.overlay || this.rootScreen and originally has no key handlers",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Consistent with fixture facts; the edited app-shell.js keeps getFocused() as 'return this.overlay || this.rootScreen' and adds handlers guarded by !!this.overlay."
+    },
+    {
+      "claim": "The generic capture/restore returns focus to the Sign out button regardless of Confirm vs Cancel",
+      "type": "quality",
+      "verified": true,
+      "evidence": "_captureFocusPath snapshots SettingsRow.index -> Sign out at open time; _restoreFocusPath rewrites container.index from the captured child before refocus(), independent of which dialog button was pressed."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Mentions that the overlay should take initial focus on open (e.g. onto a dialog button), and that the screen behind retains its focus state but gets no input while the overlay is open",
+        "reason": "This assertion bundles two loosely related ideas with 'and', and both can be satisfied by tangential asides rather than a real design statement. The initial-focus-on-open half is only weakly tied to the two bugs in the prompt; consider splitting it or dropping it, since neither bug is about the dialog failing to take focus."
+      },
+      {
+        "assertion": "Identifies bug 1 as a missing focus trap / boundary",
+        "reason": "The eval prompt already names the symptom ('pressing left/right moves focus onto the Settings buttons behind the dialog'), so restating it as 'missing focus trap' is low-difficulty. Assertion 2 (the mechanism) is the discriminating one; assertion 1 mostly rides along."
+      }
+    ],
+    "overall": "Assertions 2, 4, and 5 are strong and discriminating (they require the correct bubbling explanation and a genuine capture-before/restore-after implementation). Assertions 1 and 3 are largely restatements of the prompt, and assertion 6 is a compound catch-all. The set still separates a correct fix from a wrong one."
+  }
+}

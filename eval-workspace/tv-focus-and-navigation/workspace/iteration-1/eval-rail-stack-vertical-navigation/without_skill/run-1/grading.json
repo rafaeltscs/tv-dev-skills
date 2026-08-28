@@ -1,0 +1,102 @@
+{
+  "expectations": [
+    {
+      "text": "Rail stops consuming Up/Down: handleUp/handleDown are removed, or they return false (do not return true) at the rail's vertical edges so the key bubbles to the parent HomeScreen",
+      "passed": true,
+      "evidence": "outputs/rail.js has no handleUp/handleDown. Comment block lines 64-73: 'there is deliberately no handleUp / handleDown here ... By not handling up/down at all, the framework bubbles those keys to parent (the HomeScreen).' response.md: 'Deleted handleUp / handleDown entirely.'"
+    },
+    {
+      "text": "HomeScreen owns vertical navigation: it tracks a row index and implements handleUp/handleDown that change it, rather than leaving vertical movement to the Rail",
+      "passed": true,
+      "evidence": "outputs/home-screen.js: constructor sets this.index = 0; handleUp() does this.index--; handleDown() does this.index++, each followed by _syncScroll() and refocus()."
+    },
+    {
+      "text": "HomeScreen.getFocused() returns the currently focused rail (children[rowIndex]) instead of the hardcoded children[0]",
+      "passed": true,
+      "evidence": "outputs/home-screen.js line 28-32: 'getFocused() { return this.children[this.index]; }' — replaces original 'return this.children[0]'."
+    },
+    {
+      "text": "Each Rail preserves its last-focused card index when focus leaves and returns — handleUp/handleDown no longer reset this.index to 0",
+      "passed": true,
+      "evidence": "The index=0 resetting handleUp/handleDown are removed. rail.js comment: 'index is left untouched by vertical navigation. It already lives on the instance, so when focus leaves a rail and later returns, getFocused() naturally hands back the same card.' Quick trace in response.md confirms Up returns to card index 2, not 0."
+    },
+    {
+      "text": "Rail.handleLeft/handleRight are bounds-checked so navigating past the first or last card does not move to an out-of-range index (and ideally bubble at the edge)",
+      "passed": true,
+      "evidence": "outputs/rail.js: handleLeft() 'if (this.index > 0) { this.index--; ... }'; handleRight() 'if (this.index < this.children.length - 1) { this.index++; ... }'. Index cannot go out of range. Note: both still 'return true' at the edge (no bubble), which the assertion treats as the non-required 'ideally' part."
+    },
+    {
+      "text": "HomeScreen row index is bounds-checked so Up on the first rail / Down on the last rail does not select an out-of-range rail",
+      "passed": true,
+      "evidence": "outputs/home-screen.js: handleUp() 'if (this.index === 0) { return false; }' before this.index--; handleDown() 'if (this.index >= this.children.length - 1) { return false; }' before this.index++."
+    },
+    {
+      "text": "On focus change, the solution scrolls to keep the focused item visible (rail scrolls horizontally and/or screen scrolls vertically) rather than relying on the browser to scroll",
+      "passed": true,
+      "evidence": "Rail._syncScroll() sets this.scrollX = this.index * this.cardStride, called on every handleLeft/handleRight move. HomeScreen._syncScroll() sets this.scrollY = this.index * this.railStride, called on every handleUp/handleDown move. Model-level offsets, no browser scrolling."
+    },
+    {
+      "text": "No DOM focus model is introduced: no addEventListener, tabindex, :hover, element.focus(), or mouse/pointer event handling",
+      "passed": true,
+      "evidence": "outputs use only the fixture framework conventions (index/getFocused/handleX/refocus) plus framework-sanctioned focus()/unfocus() visual-state hooks described in _framework.md. No addEventListener, tabindex, :hover, element.focus(), or pointer/mouse handlers."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "total_tokens": 49015,
+    "duration_ms": 113071,
+    "total_duration_seconds": 113.1
+  },
+  "claims": [
+    {
+      "claim": "return true swallowed the key so up/down never reached HomeScreen, and HomeScreen had no handleUp/handleDown and getFocused hard-coded to children[0]",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Matches original fixtures: rail.js handlers returned true; home-screen.js had only 'getFocused() { return this.children[0]; }' and '// no handleUp / handleDown'."
+    },
+    {
+      "claim": "Latent bug in handleLeft: this.index-- at card 0 goes to -1 and getFocused() returns undefined",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Original fixture rail.js handleLeft had no guard; children[-1] is undefined. The new code guards with 'if (this.index > 0)'."
+    },
+    {
+      "claim": "Per-rail last-focused card restored with no extra remembered-index bookkeeping",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Rail.index is instance state, never reset by new code; HomeScreen.getFocused() delegates to this.children[this.index] whose own getFocused() returns children[this.index]. Trace confirms return to prior card."
+    },
+    {
+      "claim": "focus()/unfocus() added for visual state",
+      "type": "process",
+      "verified": true,
+      "evidence": "outputs/rail.js defines focus()/unfocus() toggling this.focused; _framework.md explicitly sanctions focus()/unfocus() for visual state, so this is not a DOM focus model."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": ["Framework has no concrete layout/scroll API, so scroll-to-follow-focus is exposed as HomeScreen.scrollY / Rail.scrollX offsets updated on every move, with _syncScroll() as the swap point for real viewport math."]
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "No DOM focus model is introduced: no addEventListener, tabindex, :hover, element.focus(), or mouse/pointer event handling",
+        "reason": "Non-discriminating for this fixture: the made-up framework has no DOM surface, so editing the provided files passes this trivially."
+      },
+      {
+        "assertion": "Rail.handleLeft/handleRight are bounds-checked so navigating past the first or last card does not move to an out-of-range index (and ideally bubble at the edge)",
+        "reason": "The parenthetical 'ideally bubble at the edge' makes this ambiguous. This run keeps 'return true' at horizontal edges (no bubble) and still passes. If Left/Right edge-bubbling matters for composability (an outer nav reacting to a horizontal edge press), promote it to a firm assertion; otherwise remove the parenthetical."
+      },
+      {
+        "reason": "No assertion checks the full focus-delegation chain still terminates on a Card, or that Enter/Back still reach the focused card. A change that tracked indices correctly but broke getFocused delegation would pass all 8."
+      }
+    ],
+    "overall": "Assertions target the core bug well. Both the with_skill and without_skill runs produced essentially equivalent, fully-correct solutions in similar time, so this eval does not discriminate between skill and baseline on this task."
+  }
+}

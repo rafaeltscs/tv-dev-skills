@@ -1,0 +1,15 @@
+{
+  "eval_id": 1,
+  "eval_name": "rail-stack-vertical-navigation",
+  "prompt": "This is a TV app driven by a remote (up/down/left/right/OK/Back). The home screen is a vertical stack of horizontal rails. Left/right moves between cards inside a rail fine, but up/down does nothing useful — I can't move focus from one rail to the next, and when I mash up/down the current rail just jumps back to its first card. Please fix the navigation so up/down moves focus between rails, each rail comes back to the card the user last had focused on it (not card 0), and the view scrolls to follow focus. rail.js and home-screen.js are attached; _framework.md documents the tiny component framework they use.",
+  "assertions": [
+    "Rail stops consuming Up/Down: handleUp/handleDown are removed, or they return false (do not return true) at the rail's vertical edges so the key bubbles to the parent HomeScreen",
+    "HomeScreen owns vertical navigation: it tracks a row index and implements handleUp/handleDown that change it, rather than leaving vertical movement to the Rail",
+    "HomeScreen.getFocused() returns the currently focused rail (children[rowIndex]) instead of the hardcoded children[0]",
+    "Each Rail preserves its last-focused card index when focus leaves and returns — handleUp/handleDown no longer reset this.index to 0",
+    "Rail.handleLeft/handleRight are bounds-checked so navigating past the first or last card does not move to an out-of-range index (and ideally bubble at the edge)",
+    "HomeScreen row index is bounds-checked so Up on the first rail / Down on the last rail does not select an out-of-range rail",
+    "On focus change, the solution scrolls to keep the focused item visible (rail scrolls horizontally and/or screen scrolls vertically) rather than relying on the browser to scroll",
+    "No DOM focus model is introduced: no addEventListener, tabindex, :hover, element.focus(), or mouse/pointer event handling"
+  ]
+}

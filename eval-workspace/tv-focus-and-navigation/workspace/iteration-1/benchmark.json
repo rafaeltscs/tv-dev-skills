@@ -1,0 +1,395 @@
+{
+  "metadata": {
+    "skill_name": "tv-focus-and-navigation",
+    "skill_path": "skills/tv-focus-and-navigation",
+    "executor_model": "claude-sonnet-5",
+    "analyzer_model": "claude-sonnet-5",
+    "timestamp": "2026-08-28T02:29:55Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 136,
+        "tokens": 62465,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rail stops consuming Up/Down: handleUp/handleDown are removed, or they return false (do not return true) at the rail's vertical edges so the key bubbles to the parent HomeScreen",
+          "passed": true,
+          "evidence": "outputs/rail.js has no handleUp/handleDown methods. Explicit comment at line 60/132: 'No handleUp / handleDown on purpose: they bubble to HomeScreen.' response.md: 'Removed handleUp / handleDown entirely. With no handler, the framework bubbles those keys to HomeScreen.'"
+        },
+        {
+          "text": "HomeScreen owns vertical navigation: it tracks a row index and implements handleUp/handleDown that change it, rather than leaving vertical movement to the Rail",
+          "passed": true,
+          "evidence": "outputs/home-screen.js: constructor sets this.index = 0; handleUp() calls moveToRail(this.index - 1); handleDown() calls moveToRail(this.index + 1); moveToRail() sets this.index = nextIndex."
+        },
+        {
+          "text": "HomeScreen.getFocused() returns the currently focused rail (children[rowIndex]) instead of the hardcoded children[0]",
+          "passed": true,
+          "evidence": "outputs/home-screen.js line 177-179: 'getFocused() { return this.children[this.index]; }' — replaces original 'return this.children[0]'."
+        },
+        {
+          "text": "Each Rail preserves its last-focused card index when focus leaves and returns — handleUp/handleDown no longer reset this.index to 0",
+          "passed": true,
+          "evidence": "The index-resetting handleUp/handleDown are removed from rail.js. Nothing else mutates Rail.index on vertical navigation. response.md: 'Per-rail focus memory comes for free. Each Rail instance keeps its own index, and nothing resets it now.' moveToRail() only calls this.children[this.index].scrollToFocused(), not an index reset."
+        },
+        {
+          "text": "Rail.handleLeft/handleRight are bounds-checked so navigating past the first or last card does not move to an out-of-range index (and ideally bubble at the edge)",
+          "passed": true,
+          "evidence": "outputs/rail.js: handleLeft() 'if (this.index === 0) return false;' before this.index--; handleRight() 'if (this.index >= this.children.length - 1) return false;' before this.index++. Edges return false so the press bubbles."
+        },
+        {
+          "text": "HomeScreen row index is bounds-checked so Up on the first rail / Down on the last rail does not select an out-of-range rail",
+          "passed": true,
+          "evidence": "outputs/home-screen.js: handleUp() 'if (this.index === 0) return false;'; handleDown() 'if (this.index >= this.children.length - 1) return false;'. Also getFocused() clamping is not needed because moveToRail is only called within bounds."
+        },
+        {
+          "text": "On focus change, the solution scrolls to keep the focused item visible (rail scrolls horizontally and/or screen scrolls vertically) rather than relying on the browser to scroll",
+          "passed": true,
+          "evidence": "Rail.scrollToFocused() sets this.scrollX = Math.max(0, this.index * CARD_STRIDE - RAIL_LEADING), called from handleLeft/handleRight and from HomeScreen.moveToRail. HomeScreen.scrollToFocused() sets this.scrollY = Math.max(0, this.index * RAIL_STRIDE - STACK_TOP_MARGIN), called from moveToRail. Pure model offsets, no browser scroll."
+        },
+        {
+          "text": "No DOM focus model is introduced: no addEventListener, tabindex, :hover, element.focus(), or mouse/pointer event handling",
+          "passed": true,
+          "evidence": "Both outputs/rail.js and outputs/home-screen.js use only the fixture framework's index/getFocused/handleX/refocus conventions. No addEventListener, tabindex, :hover, element.focus(), or pointer/mouse handlers anywhere in the outputs."
+        }
+      ],
+      "notes": [
+        "Framework has no concrete scroll API, so 'scroll to follow focus' is exposed as plain scrollX/scrollY offset properties for a renderer to consume."
+      ]
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 113.1,
+        "tokens": 49015,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rail stops consuming Up/Down: handleUp/handleDown are removed, or they return false (do not return true) at the rail's vertical edges so the key bubbles to the parent HomeScreen",
+          "passed": true,
+          "evidence": "outputs/rail.js has no handleUp/handleDown. Comment block lines 64-73: 'there is deliberately no handleUp / handleDown here ... By not handling up/down at all, the framework bubbles those keys to parent (the HomeScreen).' response.md: 'Deleted handleUp / handleDown entirely.'"
+        },
+        {
+          "text": "HomeScreen owns vertical navigation: it tracks a row index and implements handleUp/handleDown that change it, rather than leaving vertical movement to the Rail",
+          "passed": true,
+          "evidence": "outputs/home-screen.js: constructor sets this.index = 0; handleUp() does this.index--; handleDown() does this.index++, each followed by _syncScroll() and refocus()."
+        },
+        {
+          "text": "HomeScreen.getFocused() returns the currently focused rail (children[rowIndex]) instead of the hardcoded children[0]",
+          "passed": true,
+          "evidence": "outputs/home-screen.js line 28-32: 'getFocused() { return this.children[this.index]; }' — replaces original 'return this.children[0]'."
+        },
+        {
+          "text": "Each Rail preserves its last-focused card index when focus leaves and returns — handleUp/handleDown no longer reset this.index to 0",
+          "passed": true,
+          "evidence": "The index=0 resetting handleUp/handleDown are removed. rail.js comment: 'index is left untouched by vertical navigation. It already lives on the instance, so when focus leaves a rail and later returns, getFocused() naturally hands back the same card.' Quick trace in response.md confirms Up returns to card index 2, not 0."
+        },
+        {
+          "text": "Rail.handleLeft/handleRight are bounds-checked so navigating past the first or last card does not move to an out-of-range index (and ideally bubble at the edge)",
+          "passed": true,
+          "evidence": "outputs/rail.js: handleLeft() 'if (this.index > 0) { this.index--; ... }'; handleRight() 'if (this.index < this.children.length - 1) { this.index++; ... }'. Index cannot go out of range. Note: both still 'return true' at the edge (no bubble), which the assertion treats as the non-required 'ideally' part."
+        },
+        {
+          "text": "HomeScreen row index is bounds-checked so Up on the first rail / Down on the last rail does not select an out-of-range rail",
+          "passed": true,
+          "evidence": "outputs/home-screen.js: handleUp() 'if (this.index === 0) { return false; }' before this.index--; handleDown() 'if (this.index >= this.children.length - 1) { return false; }' before this.index++."
+        },
+        {
+          "text": "On focus change, the solution scrolls to keep the focused item visible (rail scrolls horizontally and/or screen scrolls vertically) rather than relying on the browser to scroll",
+          "passed": true,
+          "evidence": "Rail._syncScroll() sets this.scrollX = this.index * this.cardStride, called on every handleLeft/handleRight move. HomeScreen._syncScroll() sets this.scrollY = this.index * this.railStride, called on every handleUp/handleDown move. Model-level offsets, no browser scrolling."
+        },
+        {
+          "text": "No DOM focus model is introduced: no addEventListener, tabindex, :hover, element.focus(), or mouse/pointer event handling",
+          "passed": true,
+          "evidence": "outputs use only the fixture framework conventions (index/getFocused/handleX/refocus) plus framework-sanctioned focus()/unfocus() visual-state hooks described in _framework.md. No addEventListener, tabindex, :hover, element.focus(), or pointer/mouse handlers."
+        }
+      ],
+      "notes": [
+        "Framework has no concrete layout/scroll API, so scroll-to-follow-focus is exposed as HomeScreen.scrollY / Rail.scrollX offsets updated on every move, with _syncScroll() as the swap point for real viewport math."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 188,
+        "tokens": 67356,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Identifies bug 1 as a missing focus trap / boundary: while the overlay is open, directional keys must not be able to move focus to elements outside it",
+          "passed": true,
+          "evidence": "response.md: 'Both bugs are the two halves of the same rule: a modal must trap focus while open and restore it on close.' and 'An overlay that owns focus is a boundary: directional keys must not be able to escape it until it's dismissed. This one is porous on all four edges.' Section titled 'Bug 1 — focus leaks onto the buttons behind the dialog'."
+        },
+        {
+          "text": "Explains the mechanism of bug 1: ConfirmDialog.handleLeft/handleRight returning false at the edges lets the key bubble through AppShell to the screen behind, so the edge case must consume the key (return true) or AppShell must block directional keys while an overlay is open",
+          "passed": true,
+          "evidence": "response.md quotes the original edge handlers with 'return false; // <-- at the left edge: NOT consumed' and explains 'At either edge the dialog returns false, so the key keeps bubbling up past the overlay to AppShell / the screen underneath, which is free to move focus among the Settings buttons'. Fix: 'return true unconditionally so nothing bubbles out' plus 'a backstop in AppShell: while this.overlay is set, its own handleUp/Down/Left/Right return true'. Also notes ConfirmDialog has no handleUp/handleDown."
+        },
+        {
+          "text": "Identifies bug 2 as missing focus save/restore across the overlay lifecycle",
+          "passed": true,
+          "evidence": "response.md: 'Nothing ever recorded which button opened the dialog, and nothing restores it.' and 'Capture the focus target before the overlay opens, restore it after it closes — the \"trap and restore\" pair.'"
+        },
+        {
+          "text": "Fix for bug 2 records the focused node/path before the overlay opens (in showOverlay or the opener) and restores focus to that same node in closeOverlay",
+          "passed": true,
+          "evidence": "app-shell.js: showOverlay() sets 'this._focusBeforeOverlay = this._captureFocusPath();' before assigning the overlay; closeOverlay() calls 'if (saved) this._restoreFocusPath(saved);' then refocus(). _captureFocusPath walks getFocused() from rootScreen recording {container, child} pairs; _restoreFocusPath re-points each container.index via children.indexOf(child)."
+        },
+        {
+          "text": "The restore is generic (whatever had focus), not a hardcoded jump back to the Sign out button",
+          "passed": true,
+          "evidence": "app-shell.js _restoreFocusPath iterates the captured path and sets 'container.index = container.children.indexOf(child)' for every container. No reference to 'Sign out' or a hardcoded index. response.md: 'I did this generically in AppShell so every overlay gets it ... regardless of Confirm vs. Cancel, and regardless of anything that nudged SettingsRow.index in between.' No change needed in settings-row.js."
+        },
+        {
+          "text": "Mentions that the overlay should take initial focus on open (e.g. onto a dialog button), and that the screen behind retains its focus state but gets no input while the overlay is open",
+          "passed": true,
+          "evidence": "Initial dialog focus discussed: 'Default the dialog to \"Cancel\" for a destructive prompt like sign-out ... I set this.index = 1 in the constructor; flip it back to 0 if the product wants Confirm pre-selected.' Screen behind: 'make sure the Settings buttons behind it don't still show a highlight (they keep their focus state but must not look focused)', and the trap fix ensures SettingsRow receives no key input while the overlay is open."
+        },
+        {
+          "text": "Does not misdiagnose the primary cause as a DOM/event-listener issue, a CSS/z-index issue, or a framework API bug unrelated to focus trapping and restore",
+          "passed": true,
+          "evidence": "Diagnosis is entirely focus-path/key-bubbling and focus save-restore. The only visual note ('don't still show a highlight') is explicitly flagged as 'not required for the two bugs'. No claim of a DOM listener, z-index, or framework API defect."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.86,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 196.7,
+        "tokens": 56936,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Identifies bug 1 as a missing focus trap / boundary: while the overlay is open, directional keys must not be able to move focus to elements outside it",
+          "passed": true,
+          "evidence": "response.md: 'the dialog is drawn as an overlay, but nothing is actually trapping focus inside it. The Settings screen underneath is still mounted and still willing to handle remote keys.' and 'a modal's navigation handlers must swallow the key unconditionally'. Fix step: 'Make ConfirmDialog a real focus trap — every navigation key returns true'."
+        },
+        {
+          "text": "Explains the mechanism of bug 1: ConfirmDialog.handleLeft/handleRight returning false at the edges lets the key bubble through AppShell to the screen behind, so the edge case must consume the key (return true) or AppShell must block directional keys while an overlay is open",
+          "passed": true,
+          "evidence": "response.md walks it step by step: 'Button has no handleLeft -> bubble. ConfirmDialog.handleLeft() runs. this.index is already 0, so it does not decrement — and it return false. That false is the bug ... The key now escapes the overlay. AppShell has no key handlers, so nothing above the dialog stops it, and it reaches the still-live SettingsRow'. Also notes Up/Down have no handler at all. Fix: return true unconditionally in the dialog plus 'a shell-level backstop in AppShell — while this.overlay is set, AppShell swallows any navigation key'."
+        },
+        {
+          "text": "Identifies bug 2 as missing focus save/restore across the overlay lifecycle",
+          "passed": true,
+          "evidence": "response.md: 'The correct TV pattern is explicit focus save/restore: capture the element that opened the overlay, and put focus back on it when the overlay closes.' and 'Relying on \"the screen underneath happened to keep its cursor\" is fragile'."
+        },
+        {
+          "text": "Fix for bug 2 records the focused node/path before the overlay opens (in showOverlay or the opener) and restores focus to that same node in closeOverlay",
+          "passed": true,
+          "evidence": "settings-row.js openSignOutConfirm(): 'const openerIndex = this.index;' captured at open time, 'const restoreFocus = () => { this.index = openerIndex; };', passed via 'this.app.showOverlay(dialog, { onClose: restoreFocus })'. app-shell.js closeOverlay(): 'if (onClose) onClose();' runs before 'this.refocus();', with a comment that restore happens before the path is recomputed."
+        },
+        {
+          "text": "The restore is generic (whatever had focus), not a hardcoded jump back to the Sign out button",
+          "passed": true,
+          "evidence": "Restore captures 'openerIndex = this.index' at open time and writes that exact value back — per the grader note this counts as generic save/restore (restores whatever was focused). No hardcoded 'index = 2' or literal 'Sign out' target; the mechanism works for whichever button opened the dialog."
+        },
+        {
+          "text": "Mentions that the overlay should take initial focus on open (e.g. onto a dialog button), and that the screen behind retains its focus state but gets no input while the overlay is open",
+          "passed": false,
+          "evidence": "The 'screen behind gets no input' half is covered ('SettingsRow.index ... never receives a key'; 'the screen underneath happened to keep its cursor'). But there is no statement that the overlay should take initial focus on open onto a dialog button — the response leaves ConfirmDialog.index = 0 untouched and never discusses which dialog button is focused when it opens, nor that the buttons behind should stop showing a focus highlight. One half of this compound assertion is absent."
+        },
+        {
+          "text": "Does not misdiagnose the primary cause as a DOM/event-listener issue, a CSS/z-index issue, or a framework API bug unrelated to focus trapping and restore",
+          "passed": true,
+          "evidence": "Root cause is stated as no focus trap plus no explicit focus restore, explained purely through the framework's key-bubbling model. No mention of DOM listeners, CSS/z-index, or a framework API defect. 'The dialog-level trap is the primary fix'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 184.3,
+        "tokens": 64946,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Back is resolved as a nearest-first priority chain, checking for open transient UI (the filter drawer) before falling through to router.pop()",
+          "passed": true,
+          "evidence": "response.md gives a 5-level priority table (overlay -> modal -> drilled-in state -> router.pop() -> exit confirm) 'resolved nearest-first'. nav-controller.js handleBack() checks `this.layers.length > 0` (filter drawer registered as an overlay layer) and returns before ever reaching the `this.router.stackDepth > 1` -> `router.pop()` branch."
+        },
+        {
+          "text": "When the filter drawer is open, Back closes it and consumes the event (returns true / does not also call router.pop())",
+          "passed": true,
+          "evidence": "handleBack(): `if (this.layers.length > 0) { const top = ...; top.close(); return true; }` with the drawer layer's `close: () => this.closeFilterDrawer()`. It returns true immediately and never falls through to router.pop(). response.md test case: 'drawer closes, still on the screen... router.pop not called.'"
+        },
+        {
+          "text": "At the root screen (router.stackDepth === 1) Back shows a confirm-to-exit (e.g. press-again-within-a-timeout, using a stored timestamp or armed flag) rather than calling pop() and exiting on the first press",
+          "passed": true,
+          "evidence": "_handleRootBack() stores `this._exitArmedAt = now` (timestamp), shows toast 'Press Back again to exit', starts a 3000ms disarm timer, and returns true on the first press. Only a second press within `EXIT_CONFIRM_WINDOW_MS` calls `this.router.pop()` to exit. Level 4 guard `router.stackDepth > 1` ensures pop() is never reached at depth 1 except via this deliberate second press."
+        },
+        {
+          "text": "Only one handler acts per Back press — the answer routes Back via the focus-path bubbling order or an explicit single priority chain, not multiple independent listeners that could double-fire",
+          "passed": true,
+          "evidence": "response.md rule 1 'One consumer': NavController.handleBack() returns true on every path; the drawer deliberately has NO handleBack so 'Back bubbles past it to NavController'. filter-drawer.js FilterDrawer has handleUp/Down/Left/Right but an explicit 'NOTE: no handleBack()'. The single for-free resolver in NavController is the only consumer."
+        },
+        {
+          "text": "The design never leaves Back doing nothing and never exits the app silently on the first press from the root",
+          "passed": true,
+          "evidence": "Every branch of handleBack()/_handleRootBack() returns true and performs an action (close layer, pop, or arm+toast). First root press arms the confirm and keeps the app running ('the first press must not quit'); silent exit only occurs on an intentional second press. response.md test: 'first Back -> toast shows, app still running'."
+        },
+        {
+          "text": "Provides a concrete code sketch for the new NavController.handleBack (and/or the drawer consuming Back first) consistent with the described chain",
+          "passed": true,
+          "evidence": "outputs include a full rewrite of nav-controller.js (NavController with handleBack, _handleRootBack, _disarmExit, pushLayer/_removeLayer, open/closeFilterDrawer) and filter-drawer.js (GridScreen + FilterDrawer integration, focus delegation, direction-key trap, no handleBack). response.md embeds the same code plus wiring and test cases, all consistent with the 5-level chain."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 132.1,
+        "tokens": 48902,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Back is resolved as a nearest-first priority chain, checking for open transient UI (the filter drawer) before falling through to router.pop()",
+          "passed": true,
+          "evidence": "nav-controller.js defines `this.backLayers` as an ordered array, highest priority first: `filterDrawer` (isActive: () => this.filterDrawerOpen), then `screen` (isActive: () => this.router.stackDepth > 1, handle: router.pop()), then `exitGuard`. handleBack() walks the list and stops at the first active layer, so the drawer is checked before router.pop()."
+        },
+        {
+          "text": "When the filter drawer is open, Back closes it and consumes the event (returns true / does not also call router.pop())",
+          "passed": true,
+          "evidence": "Layer 1 `handle: () => this.closeFilterDrawer()`; the for-loop calls `layer.handle(); return true;` on the first active layer, so it never continues to the screen/pop layer. closeFilterDrawer() sets the flag false and calls refocus() — no router.pop(). response.md: 'Drawer open... layer 1 fires, closeFilterDrawer(), you stay exactly where you were. The screen never navigates.'"
+        },
+        {
+          "text": "At the root screen (router.stackDepth === 1) Back shows a confirm-to-exit (e.g. press-again-within-a-timeout, using a stored timestamp or armed flag) rather than calling pop() and exiting on the first press",
+          "passed": true,
+          "evidence": "exitGuard layer is reached only when stackDepth === 1 (screen layer inactive). confirmExit(): first press sets `this.exitArmed = true`, calls showExitHint() ('Press Back again to exit'), starts a 3000ms (EXIT_CONFIRM_MS) timer to disarm; only a second press while `exitArmed` calls exitApp(). First press never exits."
+        },
+        {
+          "text": "Only one handler acts per Back press — the answer routes Back via the focus-path bubbling order or an explicit single priority chain, not multiple independent listeners that could double-fire",
+          "passed": true,
+          "evidence": "handleBack() is a single `for (const layer of this.backLayers)` loop that `return true`s after the first active layer handles the key. response.md: 'the first layer that is currently active handles the key and you stop.' The alternative (drawer consuming its own Back) is presented as mutually exclusive with the registry entry ('anything a child consumes never reaches the registry'), not as a second parallel listener."
+        },
+        {
+          "text": "The design never leaves Back doing nothing and never exits the app silently on the first press from the root",
+          "passed": true,
+          "evidence": "handleBack() returns true in every path (including the fallthrough `return true` after the loop); exitGuard has `isActive: () => true` as an always-available last resort. First root Back arms the hint and starts a timer — app keeps running. response.md: 'The app never quits on a single press.'"
+        },
+        {
+          "text": "Provides a concrete code sketch for the new NavController.handleBack (and/or the drawer consuming Back first) consistent with the described chain",
+          "passed": true,
+          "evidence": "outputs/nav-controller.js is a complete rewrite: backLayers registry, handleBack() loop, openFilterDrawer/closeFilterDrawer, confirmExit/disarmExit/exitApp, showExitHint/hideExitHint, detach(), plus a getFocused() delegation note. response.md embeds the same code plus an alternative `FilterDrawer.handleBack()` sketch and a test list, all consistent with the 3-layer chain."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1,
+        "stddev": 0,
+        "min": 1,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 169.4333,
+        "stddev": 29.0132,
+        "min": 136,
+        "max": 188
+      },
+      "tokens": {
+        "mean": 64922.3333,
+        "stddev": 2445.5859,
+        "min": 62465,
+        "max": 67356
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.9533,
+        "stddev": 0.0808,
+        "min": 0.86,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 147.3,
+        "stddev": 43.8237,
+        "min": 113.1,
+        "max": 196.7
+      },
+      "tokens": {
+        "mean": 51617.6667,
+        "stddev": 4606.1583,
+        "min": 48902,
+        "max": 56936
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.05",
+      "time_seconds": "+22.1",
+      "tokens": "+13305"
+    }
+  },
+  "notes": [
+    "Ceiling effect: the no-skill baseline scored 20/21 (95%). Sonnet 5 already handles these rail / modal-trap / Back-stack tasks well from base knowledge, so the measurable lift from the skill is a single assertion (eval 2: stating the dialog should take initial focus on open and the background should stop showing a highlight). This suite does not isolate where the skill adds value.",
+    "Non-discriminating assertion: eval 1 #8 (\"no DOM focus model introduced\") cannot realistically fail on a bespoke DOM-less fixture — both runs pass it trivially.",
+    "Ambiguous assertion: eval 1 #5 (\"...and ideally bubble at the edge\") — the baseline kept return true at the horizontal edges and still passed; the \"ideally\" clause makes it unenforceable.",
+    "Cost of loading the skill: with_skill runs averaged ~+22s wall time and ~+13k tokens (reading SKILL.md + 4 reference files). Single-run sample, large time stddev — treat as rough.",
+    "Grader provenance error: the eval-3 grader claimed the skill \"is an unpopulated placeholder.\" It is populated; the with_skill executor read and cited the reference files. Pass/fail counts are unaffected.",
+    "Qualitative signal (not captured by pass rate): where counts tie, the with_skill answers consistently pull in specific skill framing — the 5-level Back priority table, \"the exit hint must stay out of the focus tree,\" \"reset a rail index to 0 when its data is swapped,\" defaulting a destructive confirm to Cancel, and treating focus restore as a generic focus-path walk rather than a hardcoded target.",
+    "For a next iteration that actually measures the skill: target cases a strong baseline gets wrong — focus memory after a data refresh, ragged last-row clamping in a grid, stacked-modal restore order, geometric-vs-index strategy choice, focus guides for layout gaps — or accept this as a guidance-quality skill better judged qualitatively than by pass rate."
+  ]
+}

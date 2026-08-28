@@ -1,0 +1,14 @@
+{
+  "eval_id": 2,
+  "eval_name": "modal-focus-trap-and-restore",
+  "prompt": "TV app, remote-driven. On the Settings screen, the \"Sign out\" button opens a confirm dialog as an overlay (see settings-row.js, confirm-dialog.js, app-shell.js, and _framework.md). Two bugs: (1) while the dialog is open I can still press left/right and watch focus move onto the Settings buttons behind the dialog; (2) after I pick Confirm or Cancel and the dialog closes, focus lands on the first button of the Settings screen instead of going back to the \"Sign out\" button I opened it from. How do I fix both?",
+  "assertions": [
+    "Identifies bug 1 as a missing focus trap / boundary: while the overlay is open, directional keys must not be able to move focus to elements outside it",
+    "Explains the mechanism of bug 1: ConfirmDialog.handleLeft/handleRight returning false at the edges lets the key bubble through AppShell to the screen behind, so the edge case must consume the key (return true) or AppShell must block directional keys while an overlay is open",
+    "Identifies bug 2 as missing focus save/restore across the overlay lifecycle",
+    "Fix for bug 2 records the focused node/path before the overlay opens (in showOverlay or the opener) and restores focus to that same node in closeOverlay",
+    "The restore is generic (whatever had focus), not a hardcoded jump back to the Sign out button",
+    "Mentions that the overlay should take initial focus on open (e.g. onto a dialog button), and that the screen behind retains its focus state but gets no input while the overlay is open",
+    "Does not misdiagnose the primary cause as a DOM/event-listener issue, a CSS/z-index issue, or a framework API bug unrelated to focus trapping and restore"
+  ]
+}

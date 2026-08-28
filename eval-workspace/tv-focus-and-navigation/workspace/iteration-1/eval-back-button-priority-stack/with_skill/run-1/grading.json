@@ -1,0 +1,81 @@
+{
+  "expectations": [
+    {
+      "text": "Back is resolved as a nearest-first priority chain, checking for open transient UI (the filter drawer) before falling through to router.pop()",
+      "passed": true,
+      "evidence": "response.md gives a 5-level priority table (overlay -> modal -> drilled-in state -> router.pop() -> exit confirm) 'resolved nearest-first'. nav-controller.js handleBack() checks `this.layers.length > 0` (filter drawer registered as an overlay layer) and returns before ever reaching the `this.router.stackDepth > 1` -> `router.pop()` branch."
+    },
+    {
+      "text": "When the filter drawer is open, Back closes it and consumes the event (returns true / does not also call router.pop())",
+      "passed": true,
+      "evidence": "handleBack(): `if (this.layers.length > 0) { const top = ...; top.close(); return true; }` with the drawer layer's `close: () => this.closeFilterDrawer()`. It returns true immediately and never falls through to router.pop(). response.md test case: 'drawer closes, still on the screen... router.pop not called.'"
+    },
+    {
+      "text": "At the root screen (router.stackDepth === 1) Back shows a confirm-to-exit (e.g. press-again-within-a-timeout, using a stored timestamp or armed flag) rather than calling pop() and exiting on the first press",
+      "passed": true,
+      "evidence": "_handleRootBack() stores `this._exitArmedAt = now` (timestamp), shows toast 'Press Back again to exit', starts a 3000ms disarm timer, and returns true on the first press. Only a second press within `EXIT_CONFIRM_WINDOW_MS` calls `this.router.pop()` to exit. Level 4 guard `router.stackDepth > 1` ensures pop() is never reached at depth 1 except via this deliberate second press."
+    },
+    {
+      "text": "Only one handler acts per Back press — the answer routes Back via the focus-path bubbling order or an explicit single priority chain, not multiple independent listeners that could double-fire",
+      "passed": true,
+      "evidence": "response.md rule 1 'One consumer': NavController.handleBack() returns true on every path; the drawer deliberately has NO handleBack so 'Back bubbles past it to NavController'. filter-drawer.js FilterDrawer has handleUp/Down/Left/Right but an explicit 'NOTE: no handleBack()'. The single for-free resolver in NavController is the only consumer."
+    },
+    {
+      "text": "The design never leaves Back doing nothing and never exits the app silently on the first press from the root",
+      "passed": true,
+      "evidence": "Every branch of handleBack()/_handleRootBack() returns true and performs an action (close layer, pop, or arm+toast). First root press arms the confirm and keeps the app running ('the first press must not quit'); silent exit only occurs on an intentional second press. response.md test: 'first Back -> toast shows, app still running'."
+    },
+    {
+      "text": "Provides a concrete code sketch for the new NavController.handleBack (and/or the drawer consuming Back first) consistent with the described chain",
+      "passed": true,
+      "evidence": "outputs include a full rewrite of nav-controller.js (NavController with handleBack, _handleRootBack, _disarmExit, pushLayer/_removeLayer, open/closeFilterDrawer) and filter-drawer.js (GridScreen + FilterDrawer integration, focus delegation, direction-key trap, no handleBack). response.md embeds the same code plus wiring and test cases, all consistent with the 5-level chain."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "total_tokens": 64946,
+    "duration_ms": 184251,
+    "total_duration_seconds": 184.3,
+    "executor_duration_seconds": 184.3
+  },
+  "claims": [
+    {
+      "claim": "Calling router.pop() at stackDepth 1 lets the platform close the app",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Matches fixture facts (router.pop() at stackDepth 1 closes the app); the design only calls pop() at depth 1 as the deliberate second exit press."
+    },
+    {
+      "claim": "Back can be treated as a pure function of { layers, stackDepth, _exitArmedAt }",
+      "type": "quality",
+      "verified": true,
+      "evidence": "handleBack() branches solely on this.layers.length, this.router.stackDepth, and this._exitArmedAt; no hidden state affects the decision."
+    },
+    {
+      "claim": "The filter drawer needs no handleBack of its own",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Consistent with the fixture framework rule that handleBack() bubbles to parent unless it returns true; the drawer omitting handleBack lets Back reach NavController, which sees layers.length > 0."
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "All 6 assertions pass in BOTH the with-skill and without-skill runs with near-identical designs, so this eval does not currently discriminate skill value. Note the target skill (tv-focus-and-navigation) is an unpopulated PLACEHOLDER, so equal performance is expected here — but the assertion set is also loose enough that a competent baseline answer clears it trivially."
+      },
+      {
+        "assertion": "Only one handler acts per Back press...",
+        "reason": "Both runs satisfy this by prose assertion ('one consumer') plus a single loop/if-chain; nothing forces the answer to demonstrate the double-fire failure mode it prevents (e.g. show what happens if both the drawer and the screen had a handleBack). Consider requiring an explicit statement of the bubbling/consumption contract tied to the fixture's `return true` rule."
+      },
+      {
+        "reason": "No assertion checks that focus is restored/re-resolved after the drawer closes (refocus() / focus-path agreement). The with-skill run covers this in depth (capture index, refocus on close, reset on filter change); the without-skill run only mentions getFocused ordering. An assertion here would separate a shallow answer from a complete one."
+      }
+    ],
+    "overall": "Assertions are reasonable for a design question but are all cleared by a strong baseline answer, so they measure 'did the model produce a competent design' more than 'did the skill add value'. Given the skill is a placeholder this is acceptable for now; tighten discrimination (focus restoration, explicit consumption contract, stacked-layer ordering) before treating this eval as a skill-value signal."
+  }
+}
