@@ -30,37 +30,35 @@ events — do this for anything where a broken/slow image would leave a
 visibly empty region (hero art, poster thumbnails), so you can show a
 fallback/placeholder state instead of a hole in the UI.
 
-## TV performance constraints (why this matters more than on web)
+## Lightning-specific performance mechanics
 
-TV chipsets (especially budget/mid-tier smart TV SoCs and older set-top
-boxes) have meaningfully less CPU/GPU headroom and memory than a phone or
-laptop. Code that's fine in a browser can visibly stutter on a 2019 TV
-chipset. When writing or reviewing Lightning code, watch for:
+The general case for why any of this matters on TV hardware — texture
+memory budgets, GC pressure, image sizing, virtualization — lives in the
+`tv-performance-constraints` skill; load it for the rules and the "why."
+This section is only the Lightning-specific API surface that implements
+those rules:
 
-- **Texture memory pressure.** Don't load full-resolution source images for
-  small poster/thumbnail slots — request appropriately sized images from
-  your CDN/image service rather than downscaling at render time.
+- **`memoryPressure` stage option.** Caps GPU memory as a pixel count
+  (default `24e6`, i.e. ~96MB at 4 bytes/pixel — well above what a
+  low-end TV tolerates; set it to match your real target). When the cap
+  is hit, Lightning frees least-recently-used textures that nothing
+  on-screen currently references — it cannot free textures still visibly
+  in use, so staying under budget is still on you, not the engine.
 - **Reuse textures instead of recreating them.** Swapping `src` on an
-  existing element reuses the element; destroying and recreating elements
-  to "refresh" an image is unnecessary GC pressure.
-- **Avoid per-frame allocations in animation/update loops.** Constructing
-  new objects (arrays, closures capturing large scope) inside a frequently
-  called method (e.g. something driven by `animation()` progress callbacks,
-  or a custom render-loop hook) creates GC churn that shows up as jank on
-  weaker devices, even if it's invisible on a dev machine.
-- **Lazy-load off-screen content.** For rails/grids with many items, don't
-  eagerly create/fetch textures for items far outside the visible viewport;
-  create them as they scroll into range and consider releasing textures for
-  items that scroll far enough away.
+  existing element reuses the element and its texture-cache entry;
+  destroying and recreating elements to "refresh" an image pays setup
+  cost again and is unnecessary GC pressure.
 - **Prefer absolute positioning over Flexbox for anything that changes
   size/position every frame** — Lightning's Flexbox is CPU-bound layout
-  work, fine for menus and static-ish compositions, expensive if driven at
-  animation frame rates (see `components-and-templates.md`).
+  work, fine for menus and static-ish compositions, expensive if driven
+  at animation frame rates (see `components-and-templates.md`).
 - **Batch changes with `patch()`** rather than many sequential property
-  writes, to avoid redundant intermediate render-tree recalculations.
+  writes, to avoid redundant intermediate render-tree recalculations —
+  this is Lightning's answer to the general "batch writes" allocation
+  advice.
 
-None of this needs to be litigated on every change — but if you're
-generating a rail, an image-heavy grid, or anything animation-driven, call
-out image sizing/lazy-loading/texture-reuse choices explicitly rather than
-writing the "obviously correct on web" version and letting the TV
-performance implications go unmentioned.
+If you're generating a rail, an image-heavy grid, or anything
+animation-driven, call out image sizing/lazy-loading/texture-reuse
+choices explicitly (`tv-performance-constraints` for the budget math)
+rather than writing the "obviously correct on web" version and letting
+the TV performance implications go unmentioned.

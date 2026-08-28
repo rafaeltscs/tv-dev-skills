@@ -25,6 +25,18 @@ No text was copied verbatim beyond short API names and minimal
 illustrative patterns. The reference examples are framework-neutral
 pseudo-code, not lifted from any one library.
 
+The content in `skills/tv-performance-constraints/` was written the same
+way, synthesizing publicly available documentation on TV hardware
+constraints and performance practice:
+
+- LightningJS Core v2 runtime configuration docs (texture memory / `memoryPressure`) — https://github.com/rdkcentral/Lightning/tree/master/docs (Apache License 2.0)
+- Android TV memory optimization guide (device-class RAM/graphics budgets, image sizing) — https://developer.android.com/training/tv/playback/memory
+- Samsung Tizen TV application performance / launch-time optimization guides — https://developer.samsung.com/smarttv/develop/guides/application-performance-improvement/application-performance-improvement.html
+
+The texture-size arithmetic is plain math (width × height × 4 bytes
+RGBA); the pseudo-code examples are original and framework-neutral. No
+text was copied verbatim beyond short option/API names.
+
 If you fork or extend this repo with your own team's internal conventions,
 keep employer-specific code, credentials, asset paths, and business logic
 out of it — see the "Keeping this project-agnostic" section of

@@ -76,7 +76,7 @@ content lives somewhere non-default.
    `lightningjs-v2-conventions/references/typescript.md`).
 7. If the flat `skills/` listing ever gets hard to scan, consider category
    subfolders (`skills/frameworks/`, `skills/platform/`, etc.) — not worth
-   it yet with two real skills and three placeholders.
+   it yet with three real skills and two placeholders.
 
 ## Refreshing the local install after a content change
 

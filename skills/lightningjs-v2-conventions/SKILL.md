@@ -66,7 +66,10 @@ Each reference file is self-contained with runnable-shape code examples.
 7. **Call out performance-sensitive choices** relevant to low-end TV
    hardware when they come up (texture reuse, avoiding per-frame
    allocations in animations, avoiding unnecessary Flexbox on
-   frequently-resizing containers) — see `references/textures-and-performance.md`.
+   frequently-resizing containers) — see
+   `references/textures-and-performance.md` for the Lightning-specific
+   mechanics and the `tv-performance-constraints` skill for the general
+   budgets and rules behind them.
 8. **Avoid `_states()`/`_setState()` by default.** It adds indirection
    (state subclasses silently overriding methods) that's easy to over-apply
    for cases a plain conditional or separate method would handle more
@@ -81,6 +84,13 @@ Each reference file is self-contained with runnable-shape code examples.
 - Lightning CLI tooling/build config
 - Platform-specific packaging (Tizen, webOS, Fire TV, Vizio/SmartCast)
 - Lightning 3 / Blits
+- Framework-agnostic performance budgets and rules (texture memory math,
+  GC/allocation discipline, image sizing, virtualization) — see
+  `tv-performance-constraints`; this skill covers only the Lightning APIs
+  that implement them
+- Framework-agnostic focus/navigation UX patterns (rails, grids, modals,
+  spatial resolution) — see `tv-focus-and-navigation`; this skill covers
+  only the Lightning focus APIs (`references/focus-and-input.md`)
 
 If the task clearly needs one of these, say so explicitly rather than
 guessing — these deserve their own skill files.

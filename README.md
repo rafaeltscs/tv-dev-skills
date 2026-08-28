@@ -14,7 +14,7 @@ and source repositories. See
 | [`lightningjs-v2-conventions`](skills/lightningjs-v2-conventions/) | **Ready** | Components, Templates, lifecycle, focus/remote-control input, textures & performance, signals, Component States, TypeScript Template Specs. |
 | [`lightningjs-v3-conventions`](skills/lightningjs-v3-conventions/) | Planned | Lightning 3 / Blits — kept fully separate from v2 since the two frameworks don't share syntax. |
 | [`tv-focus-and-navigation`](skills/tv-focus-and-navigation/) | **Ready** | Framework-agnostic remote-control navigation: the focus model, key handling & propagation, spatial (directional) resolution, and the recurring shapes (rails, grids, modals, menus, page transitions). |
-| [`tv-performance-constraints`](skills/tv-performance-constraints/) | Planned | Texture memory limits, GC pressure, image sizing/caching, lazy loading for low-end TV hardware. |
+| [`tv-performance-constraints`](skills/tv-performance-constraints/) | **Ready** | Framework-agnostic performance rules for low-end TV hardware: texture memory budgets & the bytes-per-pixel math, GC pressure & allocation discipline, image sizing/decode/caching, lazy loading & virtualization of rails/grids. |
 | [`tv-platform-quirks`](skills/tv-platform-quirks/) | Planned | The Tizen/webOS/Vizio/Fire TV support matrix: lifecycle events, key codes, DRM/player quirks, packaging. |
 
 "Planned" skills are inert placeholders — they won't trigger and add no
