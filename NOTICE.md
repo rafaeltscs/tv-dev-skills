@@ -37,6 +37,22 @@ The texture-size arithmetic is plain math (width × height × 4 bytes
 RGBA); the pseudo-code examples are original and framework-neutral. No
 text was copied verbatim beyond short option/API names.
 
+The LG webOS content in `skills/tv-platform-quirks/` was written the same
+way, synthesizing publicly available LG webOS TV developer documentation:
+
+- webOS TV Developer — App Lifecycle Management, webOS Events, Back Button,
+  Magic Remote guides — https://webostv.developer.lge.com/develop/guides/
+- webOS TV Developer — Web API and Web Engine, Streaming Protocol and DRM,
+  Audio and Video Format specifications — https://webostv.developer.lge.com/develop/specifications/
+- webOS TV Developer — `appinfo.json`, `webOSTV.js` / webOSDev API, DRM
+  API references — https://webostv.developer.lge.com/develop/references/
+- webOS TV Developer — CLI Developer Guide and App Approval Process — https://webostv.developer.lge.com/develop/tools/ and https://webostv.developer.lge.com/distribute/app-approval-process
+
+Remote key codes, the Chromium-per-OS-version table, and `appinfo.json`
+field names are short factual identifiers; the explanations and code
+patterns are original. No vendor text was reproduced verbatim. Samsung
+Tizen, Vizio/SmartCast, and Fire TV are not yet covered by that skill.
+
 If you fork or extend this repo with your own team's internal conventions,
 keep employer-specific code, credentials, asset paths, and business logic
 out of it — see the "Keeping this project-agnostic" section of
