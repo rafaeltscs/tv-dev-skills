@@ -1,8 +1,9 @@
 # tv-platform-quirks (partial)
 
-Status: **LG webOS and Samsung Tizen written; other platforms not yet.**
-`SKILL.md` has real triggering frontmatter scoped to those two platforms
-so it does not claim to cover ones it hasn't been written for.
+Status: **LG webOS, Samsung Tizen, and VIZIO SmartCast written; Fire TV
+and Comcast/RDK not yet.** `SKILL.md` has real triggering frontmatter
+scoped to the three written platforms so it does not claim to cover ones
+it hasn't been written for.
 
 ## Done
 
@@ -30,6 +31,14 @@ so it does not claim to cover ones it hasn't been written for.
     application ID, `required_version`, privileges), signed `.wgt`,
     author vs distributor certificates + DUID allowlist, `tizen` CLI,
     Emulator vs TV, Samsung Apps TV Seller Office launch checklist.
+- **VIZIO SmartCast (VIZIO OS)** — one consolidated `vizio-smartcast.md`
+  (the public surface doesn't fill five files): hosted-URL delivery model
+  (pre-prod/prod URLs, no package), `vizio-companion-lib.js` +
+  `VIZIO_LIBRARY_DID_LOAD` bind-before-load ordering, `window.VIZIO.*`
+  methods, plain `keydown` with no long-press detection, minimal remote,
+  `visibilitychange` lifecycle + startup-time gates, BYO MSE player +
+  Widevine, Preferred Developer Program / AIM submission, and an explicit
+  "confirm with VIZIO" list for the partner-gated gaps.
 
 ## Still to write
 
@@ -37,8 +46,6 @@ Each is a separate divergence with its own lifecycle, key codes, media
 API, DRM stack, and store — add as its own reference file(s) under the
 same `SKILL.md`, and widen the frontmatter `description` when it lands:
 
-- **Vizio / SmartCast** — SmartCast web runtime, engine baseline, remote
-  map, store process.
 - **Fire TV** — web app / Amazon WebView (Amazon Silk vs system), Amazon
   device messaging, Amazon Appstore submission, remote (including the
   Alexa Voice Remote) key map.

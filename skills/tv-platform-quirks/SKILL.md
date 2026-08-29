@@ -1,6 +1,6 @@
 ---
 name: tv-platform-quirks
-description: Platform-specific quirks for shipping a web-based TV app on LG webOS and Samsung Tizen — each platform's frozen Chromium engine per OS version, app lifecycle/suspend events (visibilitychange plus webOSLaunch/webOSRelaunch on LG; Pause/Resume + app-control on Tizen), remote key codes and the pointer-vs-D-pad split (Back = 461 on webOS, 10009 on Tizen; Tizen also requires tizen.tvinputdevice key registration), the Back/exit contract, adaptive streaming and DRM (webOS: HLS-only + luna://com.webos.service.drm; Tizen: AVPlay with DASH/HLS + setDrm), and packaging + store review (appinfo.json/.ipk/ares-cli/LG Seller Lounge; config.xml/.wgt/Tizen Studio/Samsung Apps TV Seller Office). Use whenever code targets an LG or Samsung TV and touches engine/API baseline, lifecycle, remote input, video/DRM, packaging, or store review — e.g. "why does this work on my TV but not the 2019 LG", "handle the back button on Tizen", "our Samsung build crashes coming back from live TV", "which webOS versions support optional chaining", "package the app for the LG store". Covers LG webOS and Samsung Tizen only — Vizio/SmartCast, Fire TV, and Comcast/RDK are not yet in this skill; say so rather than guessing their behavior from webOS or Tizen.
+description: Platform-specific quirks for shipping a web-based TV app on LG webOS, Samsung Tizen, and VIZIO SmartCast (VIZIO OS) — each platform's Chromium engine baseline, app lifecycle/suspend events (visibilitychange plus webOSLaunch/webOSRelaunch on LG; Pause/Resume + app-control on Tizen; plain web semantics on VIZIO), remote key codes and the pointer-vs-D-pad split (Back = 461 on webOS, 10009 on Tizen, verify-on-device on VIZIO; Tizen also requires tizen.tvinputdevice key registration), the Back/exit contract, adaptive streaming and DRM (webOS: HLS-only + luna://com.webos.service.drm; Tizen: AVPlay with DASH/HLS + setDrm; VIZIO: bring-your-own MSE player + Widevine), and packaging + store review (appinfo.json/.ipk/ares-cli/LG Seller Lounge; config.xml/.wgt/Tizen Studio/Samsung Apps TV Seller Office; VIZIO hosted-URL app + Preferred Developer Program). Use whenever code targets an LG, Samsung, or VIZIO TV and touches engine/API baseline, lifecycle, remote input, video/DRM, packaging, or store review — e.g. "why does this work on my TV but not the 2019 LG", "handle the back button on Tizen", "our Samsung build crashes coming back from live TV", "which webOS versions support optional chaining", "set up the VIZIO companion library", "package the app for the LG store". Covers LG webOS, Samsung Tizen, and VIZIO SmartCast only — Fire TV and Comcast/RDK are not yet in this skill; say so rather than guessing their behavior from the covered platforms.
 ---
 
 # TV Platform Quirks
@@ -12,14 +12,17 @@ Code that is correct on a dev machine — and even on last year's TV — fails
 on a specific platform/firmware because an API wasn't there, a resource
 wasn't released on background, or a key code was different.
 
-**This skill covers LG webOS and Samsung Tizen.** Vizio/SmartCast, Fire
-TV, and Comcast/RDK are planned but not written — if the task is about one
+**This skill covers LG webOS, Samsung Tizen, and VIZIO SmartCast.** Fire
+TV and Comcast/RDK are planned but not written — if the task is about one
 of those, say the skill doesn't cover it yet rather than extrapolating.
-webOS and Tizen are close in shape (packaged web app, frozen Chromium,
-suspend-not-close lifecycle, D-pad-first input) but differ in concrete
-details — key codes, key registration, the media API, DRM plumbing,
-manifest format, store — so **keep the two straight and don't assume a
-webOS fact holds on Tizen or vice versa.**
+The three covered platforms are close in shape (web app, Chromium
+runtime, suspend-not-close lifecycle, D-pad-first input) but differ in
+concrete details — key codes, key registration, the media API, DRM
+plumbing, manifest format, delivery model, store — so **keep them straight
+and don't assume a webOS fact holds on Tizen or VIZIO, or vice versa.**
+webOS and Tizen are well documented; VIZIO's developer docs are
+partner-gated and thin, so its reference file flags what to confirm
+directly with VIZIO.
 
 ## How to use this skill
 
@@ -46,16 +49,24 @@ touches.
 | AVPlay (`webapis.avplay`) state machine, display-rect overlay, `setStreamingProperty`, `suspend`/`restore`; DASH + HLS + Smooth Streaming; DRM via `setDrm` (`PLAYREADY` / `WIDEVINE_CDM`); `<video>` vs AVPlay | `references/tizen-media-and-drm.md` |
 | `config.xml` (Tizen application ID, `required_version`, privileges); signed `.wgt`; author vs distributor certificates & the DUID allowlist; `tizen` CLI; Emulator vs TV; Samsung Apps TV Seller Office launch checklist | `references/tizen-packaging-and-certification.md` |
 
-Each file is self-contained and grounded in the vendor's TV developer docs.
+### VIZIO SmartCast
 
-## Non-negotiable conventions (both platforms)
+| Task involves... | Read |
+|---|---|
+| The hosted-URL delivery model (pre-prod/prod URLs, no package, no local install); the `vizio-companion-lib.js` include and `VIZIO_LIBRARY_DID_LOAD` bind-before-load ordering; `window.VIZIO` methods (`exitApplication`, `getDeviceInformation`, `setClosedCaptionHandler`, …); plain `keydown` input with no long-press detection; minimal-remote key set; `visibilitychange` lifecycle; startup-time gates; bring-your-own MSE player + Widevine; Preferred Developer Program / AIM submission; and what to confirm with VIZIO directly | `references/vizio-smartcast.md` |
 
-1. **Pick an OS-version floor and target that engine, not "modern
-   browsers."** Map the target OS version to its Chromium number (tables
-   in the two `*-runtime-and-web-engine.md` files) and set
-   transpile/polyfill to it. webOS 4.x = CR53, 5.x = CR68, 6.x = CR79;
-   Tizen 3.0 = CR47 (no `async`/`await`), 6.0 = CR76 (no optional
-   chaining), 6.5 = CR85. Verify on a device or the matching
+Each file is self-contained and grounded in the vendor's TV developer
+docs (VIZIO's public record is thin — that file marks its gaps).
+
+## Non-negotiable conventions (all platforms)
+
+1. **Pick an engine baseline and target it, not "modern browsers."** For
+   webOS and Tizen, map the target OS version to its Chromium number
+   (tables in the `*-runtime-and-web-engine.md` files): webOS 4.x = CR53,
+   5.x = CR68, 6.x = CR79; Tizen 3.0 = CR47 (no `async`/`await`), 6.0 =
+   CR76 (no optional chaining), 6.5 = CR85. VIZIO publishes no such
+   table — pick a conservative baseline, feature-detect at runtime, and
+   test the oldest hardware. Verify on a device or the matching
    emulator/simulator, never desktop Chrome alone.
 2. **Release the media pipeline and DRM session on `visibilitychange` →
    hidden.** Stop and fully tear down the player (webOS: clear `src` /
@@ -67,27 +78,34 @@ Each file is self-contained and grounded in the vendor's TV developer docs.
    pointer (Magic Remote / Samsung Smart Remote) is additive;
    certification requires D-pad operability. No hover-only menus, no
    pointer-only actions.
-4. **Branch remote input on `event.keyCode`, never `event.key`.** Both
+4. **Branch remote input on `event.keyCode`, never `event.key`.** These
    platforms report `key` unreliably for remote buttons. **Back is `461`
-   on webOS, `10009` on Tizen** — don't hardcode one for both.
+   on webOS, `10009` on Tizen, and not reliably either on VIZIO (verify
+   on device)** — don't hardcode one across platforms.
 5. **Honour the Back/exit contract.** Back moves up exactly one level,
    never dead-ends, and reaches app exit from the root. webOS: History
    API by default, or `disableBackHistoryAPI` + `webOS.platformBack()` at
    root. Tizen: you own the stack from the start; call
-   `tizen.application.getCurrentApplication().exit()` at root.
+   `tizen.application.getCurrentApplication().exit()` at root. VIZIO: call
+   `window.VIZIO.exitApplication()` at root.
 6. **Know the adaptive-streaming story per platform.** webOS: **HLS only**
    natively — DASH needs your own MSE player. Tizen: use **AVPlay** for
    HLS/DASH/Smooth Streaming, 4K, and DRM at scale; plain `<video>` only
-   for simple progressive clips.
-7. **Tear the DRM session down with the player.** webOS: `unload` the
-   `com.webos.service.drm` client before exit / before switching DRM
-   type. Tizen: `close()` the AVPlay instance. A leaked session breaks
-   the *next* playback attempt, with a symptom far from the cause.
+   for simple progressive clips. VIZIO: no native ABR player — bring your
+   own MSE player (hls.js / Shaka / dash.js) for both HLS and DASH.
+7. **Tear the DRM session / player down on background and exit.** webOS:
+   `unload` the `com.webos.service.drm` client before exit / before
+   switching DRM type. Tizen: `stop()` → `close()` the AVPlay instance.
+   VIZIO: destroy the MSE `MediaSource` / player and clear the `<video>`.
+   A leaked session breaks the *next* playback attempt, with a symptom
+   far from the cause.
 8. **Assume every store submission is re-reviewed from scratch, on your
    oldest supported OS version.** Keep that version in the regression
-   pass; bump the manifest version every submission; keep the same
-   app identity (webOS `id`; Tizen application ID **and** author
-   certificate) across updates.
+   pass. webOS/Tizen: bump the manifest version every submission and keep
+   the same app identity (webOS `id`; Tizen application ID **and** author
+   certificate). VIZIO: the app is hosted, so keep the **pre-prod URL**
+   pinned to the submitted build during review rather than serving your
+   rolling dev branch.
 
 ## Platform-specific must-knows
 
@@ -106,9 +124,16 @@ Each file is self-contained and grounded in the vendor's TV developer docs.
 - **webOS — the Back button is wired to browser history by default.**
   `history.pushState()` per navigation and handle `popstate`, or opt out
   with `disableBackHistoryAPI`.
-- **Manifest formats differ:** webOS `appinfo.json` (JSON), Tizen
-  `config.xml` (W3C widget XML with `tizen:` extensions). Package:
-  `.ipk` vs signed `.wgt`.
+- **VIZIO — load `vizio-companion-lib.js` last, bind first.** Attach
+  handlers for `VIZIO_LIBRARY_DID_LOAD` (and the other library events)
+  *before* the `<script>` that pulls the library from
+  `localhost:12345/scfs/cl/js/`, or the API never initialises.
+- **VIZIO — no key registration and no long-press detection.** Plain
+  `keydown`/`keyup`; drive key-repeat scrolling from the repeated events
+  yourself. Many VIZIO remotes have no colour or transport keys.
+- **Delivery / manifest differ:** webOS `appinfo.json` + `.ipk`; Tizen
+  `config.xml` (W3C widget XML) + signed `.wgt`; VIZIO has **no package
+  at all** — you register a hosted HTTPS URL and the TV loads it.
 
 ## Relationship to the other skills
 
@@ -122,13 +147,13 @@ Each file is self-contained and grounded in the vendor's TV developer docs.
 
 ## What this skill does not cover (yet)
 
-- **Vizio / SmartCast** — SmartCast web runtime, engine baseline, remote
-  map, store process.
 - **Fire TV** — web app / Amazon WebView (Silk vs system), Amazon device
   messaging, Amazon Appstore submission, Alexa Voice Remote key map.
-- **Comcast / RDK** — apps on RDK-based operator boxes.
+- **Comcast / RDK** — apps on RDK-based operator boxes (Firebolt SDK).
 - Native (non-web) platform services beyond what a web app calls through
-  `luna://` (webOS) or `tizen.*` / `webapis.*` (Tizen).
+  `luna://` (webOS), `tizen.*` / `webapis.*` (Tizen), or `window.VIZIO`.
+- VIZIO details behind its partner-gated developer portal — the VIZIO
+  reference file lists what to confirm directly with VIZIO.
 - Lightning 3 / Blits.
 
 See `PLANNED.md` for the intended shape of the remaining platforms.

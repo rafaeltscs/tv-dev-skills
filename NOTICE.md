@@ -60,11 +60,24 @@ documentation:
   Office launch checklist — https://developer.samsung.com/smarttv/develop/getting-started/ and https://developer.samsung.com/tv/distribute/launch-checklist
 - Tizen Docs — Input Device and application lifecycle guides — https://docs.tizen.org/application/web/
 
-Remote key codes, the Chromium-per-OS-version tables, and manifest field
-names (`appinfo.json`, `config.xml`) are short factual identifiers; the
-explanations and code patterns are original. No vendor text was reproduced
-verbatim. Vizio/SmartCast, Fire TV, and Comcast/RDK are not yet covered by
-that skill.
+The VIZIO SmartCast content in the same skill was written the same way,
+from the limited publicly available material (VIZIO's developer portal is
+partner-gated):
+
+- VIZIO Developer Portal and Platform+ — https://developer.vizio.com/ and https://platformplus.vizio.com/
+- Publicly published third-party integration write-ups on the VIZIO
+  companion library, hosted-app model, and submission flow (TO THE NEW
+  engineering blog; the socialvibe/truex CTV reference app's VIZIO notes)
+
+The VIZIO reference file explicitly marks the points that need
+confirmation from VIZIO's partner documentation rather than stating them
+as established fact.
+
+Remote key codes, the Chromium-per-OS-version tables, `window.VIZIO`
+method names, and manifest field names (`appinfo.json`, `config.xml`) are
+short factual identifiers; the explanations and code patterns are
+original. No vendor text was reproduced verbatim. Fire TV and Comcast/RDK
+are not yet covered by that skill.
 
 If you fork or extend this repo with your own team's internal conventions,
 keep employer-specific code, credentials, asset paths, and business logic
