@@ -48,10 +48,23 @@ way, synthesizing publicly available LG webOS TV developer documentation:
   API references — https://webostv.developer.lge.com/develop/references/
 - webOS TV Developer — CLI Developer Guide and App Approval Process — https://webostv.developer.lge.com/develop/tools/ and https://webostv.developer.lge.com/distribute/app-approval-process
 
-Remote key codes, the Chromium-per-OS-version table, and `appinfo.json`
-field names are short factual identifiers; the explanations and code
-patterns are original. No vendor text was reproduced verbatim. Samsung
-Tizen, Vizio/SmartCast, and Fire TV are not yet covered by that skill.
+The Samsung Tizen content in the same skill was written the same way,
+synthesizing publicly available Samsung Tizen TV / Tizen developer
+documentation:
+
+- Samsung Smart TV Developer — Web Engine Specifications, Remote Control
+  guide, Multitasking guide, Playback Using AVPlay — https://developer.samsung.com/smarttv/develop/
+- Samsung Smart TV Developer — TVInputDevice API and Application API
+  references — https://developer.samsung.com/smarttv/develop/api-references/
+- Samsung Smart TV Developer — Creating Certificates, and the TV Seller
+  Office launch checklist — https://developer.samsung.com/smarttv/develop/getting-started/ and https://developer.samsung.com/tv/distribute/launch-checklist
+- Tizen Docs — Input Device and application lifecycle guides — https://docs.tizen.org/application/web/
+
+Remote key codes, the Chromium-per-OS-version tables, and manifest field
+names (`appinfo.json`, `config.xml`) are short factual identifiers; the
+explanations and code patterns are original. No vendor text was reproduced
+verbatim. Vizio/SmartCast, Fire TV, and Comcast/RDK are not yet covered by
+that skill.
 
 If you fork or extend this repo with your own team's internal conventions,
 keep employer-specific code, credentials, asset paths, and business logic

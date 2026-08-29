@@ -1,6 +1,6 @@
 ---
 name: tv-platform-quirks
-description: Platform-specific quirks for shipping a web-based TV app on LG webOS (webOS TV) — frozen Chromium engine per OS version, app lifecycle/suspend events (webOSLaunch, webOSRelaunch, visibilitychange), Magic Remote vs D-pad input and remote key codes (Back = 461), the Back-button/History-API contract, HLS-only adaptive streaming, PlayReady/Widevine DRM via luna://com.webos.service.drm, appinfo.json, ares-cli packaging to .ipk, and LG Content Store certification. Use whenever code targets an LG TV / webOS / "the LG app" and touches engine/API baseline, lifecycle, remote input, video/DRM, packaging, or store review — e.g. "why does this work on my TV but not the 2019 LG", "handle the back button on webOS", "our LG build crashes coming back from live TV", "package the app for the LG store". Covers LG webOS ONLY for now — Samsung Tizen, Vizio/SmartCast, and Fire TV are not yet in this skill; say so rather than guessing their behavior from webOS.
+description: Platform-specific quirks for shipping a web-based TV app on LG webOS and Samsung Tizen — each platform's frozen Chromium engine per OS version, app lifecycle/suspend events (visibilitychange plus webOSLaunch/webOSRelaunch on LG; Pause/Resume + app-control on Tizen), remote key codes and the pointer-vs-D-pad split (Back = 461 on webOS, 10009 on Tizen; Tizen also requires tizen.tvinputdevice key registration), the Back/exit contract, adaptive streaming and DRM (webOS: HLS-only + luna://com.webos.service.drm; Tizen: AVPlay with DASH/HLS + setDrm), and packaging + store review (appinfo.json/.ipk/ares-cli/LG Seller Lounge; config.xml/.wgt/Tizen Studio/Samsung Apps TV Seller Office). Use whenever code targets an LG or Samsung TV and touches engine/API baseline, lifecycle, remote input, video/DRM, packaging, or store review — e.g. "why does this work on my TV but not the 2019 LG", "handle the back button on Tizen", "our Samsung build crashes coming back from live TV", "which webOS versions support optional chaining", "package the app for the LG store". Covers LG webOS and Samsung Tizen only — Vizio/SmartCast, Fire TV, and Comcast/RDK are not yet in this skill; say so rather than guessing their behavior from webOS or Tizen.
 ---
 
 # TV Platform Quirks
@@ -12,79 +12,123 @@ Code that is correct on a dev machine — and even on last year's TV — fails
 on a specific platform/firmware because an API wasn't there, a resource
 wasn't released on background, or a key code was different.
 
-**This skill currently covers LG webOS only.** Samsung Tizen,
-Vizio/SmartCast, and Fire TV are planned but not written. If the task is
-about one of those, say the skill doesn't cover it yet rather than
-extrapolating from webOS — the lifecycle events, key codes, and DRM
-plumbing genuinely differ.
+**This skill covers LG webOS and Samsung Tizen.** Vizio/SmartCast, Fire
+TV, and Comcast/RDK are planned but not written — if the task is about one
+of those, say the skill doesn't cover it yet rather than extrapolating.
+webOS and Tizen are close in shape (packaged web app, frozen Chromium,
+suspend-not-close lifecycle, D-pad-first input) but differ in concrete
+details — key codes, key registration, the media API, DRM plumbing,
+manifest format, store — so **keep the two straight and don't assume a
+webOS fact holds on Tizen or vice versa.**
 
 ## How to use this skill
 
-Read the reference file(s) that match what the task touches:
+Read the reference file(s) matching the platform and what the task
+touches.
+
+### LG webOS
 
 | Task involves... | Read |
 |---|---|
-| Which JS/CSS/web APIs are safe on a given webOS version; the Chromium-per-release table; `webOSTV.js` / Luna service calls; `deviceInfo` capability flags; 1080p logical resolution & overscan | `references/webos-runtime-and-web-engine.md` |
-| App start/suspend/resume; `webOSLaunch` / `webOSRelaunch` / `visibilitychange`; what to release on background and rebuild on resume; `handlesRelaunch`; `requiredMemory`; splash / first paint | `references/webos-lifecycle.md` |
-| Remote key codes (Back = 461, colours, media, numbers); `event.key` being `"Unidentified"`; Magic Remote pointer vs 5-way mode; `cursorStateChange`; the Back-button / History-API contract and root-exit behaviour | `references/webos-remote-input.md` |
-| `<video>` playback; HLS-only (no DASH) adaptive streaming; MSE/EME; PlayReady & Widevine via `luna://com.webos.service.drm`; unloading the DRM client; codec/HDR/audio support that varies by panel | `references/webos-media-and-drm.md` |
-| `appinfo.json` fields; `ares-*` CLI and `.ipk`; Developer Mode; Simulator vs Emulator vs device; LG Seller Lounge submission, UX scenario, self-checklist, re-review on every update | `references/webos-packaging-and-certification.md` |
+| Safe JS/CSS/web APIs per webOS version; Chromium-per-release table; `webOSTV.js` / Luna calls; `deviceInfo` flags; 1080p logical resolution & overscan | `references/webos-runtime-and-web-engine.md` |
+| Start/suspend/resume; `webOSLaunch` / `webOSRelaunch` / `visibilitychange`; release-on-background & rebuild-on-resume; `handlesRelaunch`; `requiredMemory`; splash | `references/webos-lifecycle.md` |
+| Key codes (Back = 461, colours, media, numbers); `event.key` = `"Unidentified"`; Magic Remote pointer vs 5-way; `cursorStateChange`; Back / History-API contract & root exit | `references/webos-remote-input.md` |
+| `<video>` playback; HLS-only (no DASH); MSE/EME; PlayReady & Widevine via `luna://com.webos.service.drm`; unloading the DRM client; codec/HDR/audio by panel | `references/webos-media-and-drm.md` |
+| `appinfo.json`; `ares-*` CLI & `.ipk`; Developer Mode; Simulator vs Emulator vs device; LG Seller Lounge submission, UX scenario, self-checklist, re-review | `references/webos-packaging-and-certification.md` |
 
-Each file is self-contained and grounded in LG's webOS TV developer docs.
+### Samsung Tizen
 
-## Non-negotiable conventions for webOS code
+| Task involves... | Read |
+|---|---|
+| Safe JS/CSS/web APIs per Tizen version; Chromium-per-release table; the `tizen.*` / `webapis.*` layers and the `webapis.js` include; privileges; 1080p logical resolution & overscan | `references/tizen-runtime-and-web-engine.md` |
+| Running/Paused/Resumed; `visibilitychange` (also fires on exit); app-control relaunch; release-on-background; re-validating network/URLs on resume; `exit()` / `hide()` | `references/tizen-lifecycle.md` |
+| `tizen.tvinputdevice` key registration (`registerKeyBatch`, `getSupportedKeys`); key codes (Back = 10009, Exit = 10182, colours, media, numbers); `event.key` unreliable; Smart Remote pointer; Return-at-root exit | `references/tizen-remote-input.md` |
+| AVPlay (`webapis.avplay`) state machine, display-rect overlay, `setStreamingProperty`, `suspend`/`restore`; DASH + HLS + Smooth Streaming; DRM via `setDrm` (`PLAYREADY` / `WIDEVINE_CDM`); `<video>` vs AVPlay | `references/tizen-media-and-drm.md` |
+| `config.xml` (Tizen application ID, `required_version`, privileges); signed `.wgt`; author vs distributor certificates & the DUID allowlist; `tizen` CLI; Emulator vs TV; Samsung Apps TV Seller Office launch checklist | `references/tizen-packaging-and-certification.md` |
 
-1. **Pick a webOS version floor and target its Chromium engine, not
-   "modern browsers."** webOS 4.x is Chromium 53, 5.x is 68, 6.x is 79.
-   Map the target version to its engine (table in
-   `references/webos-runtime-and-web-engine.md`), set transpile/polyfill
-   to that, and verify on a device or the matching simulator — never on
-   desktop Chrome alone.
-2. **Release the media pipeline and DRM client on `visibilitychange` →
-   hidden.** `pause()`, drop `src` / detach MediaSource, `video.load()`,
-   `unload` the DRM client, stop timers, persist resume state. A suspended
-   app holding the decoder is the number-one OOM-kill and the number-one
-   "crashes on resume" cause.
-3. **Every screen must be fully operable with the D-pad + OK.** The Magic
-   Remote pointer is additive; certification requires 5-way. No
-   hover-only menus, no pointer-only actions.
-4. **Branch remote input on `event.keyCode`, never `event.key`.** webOS
-   reports `key` as `"Unidentified"` for many remote buttons. Back is
-   `461`.
-5. **Honour the Back contract.** Back moves up exactly one level, never
-   dead-ends, and reaches app exit from the root (a confirm popup on
-   webOS 6.0+, Home on 5.x). Use the History API or set
-   `disableBackHistoryAPI` and manage the stack yourself with
-   `webOS.platformBack()` at the root.
-6. **HLS is the only natively supported adaptive protocol.** No
-   MPEG-DASH, no Smooth Streaming. If you need DASH you ship your own
-   MSE-based player.
-7. **`unload` the DRM client before exit or before switching DRM type.**
-   A leaked client breaks the *next* playback session, with a symptom far
-   from the cause.
-8. **Assume every store submission is re-reviewed from scratch, and that
-   review runs on your oldest supported webOS version.** Keep that
-   version in the regression pass; bump `version` in `appinfo.json` every
-   submission.
+Each file is self-contained and grounded in the vendor's TV developer docs.
+
+## Non-negotiable conventions (both platforms)
+
+1. **Pick an OS-version floor and target that engine, not "modern
+   browsers."** Map the target OS version to its Chromium number (tables
+   in the two `*-runtime-and-web-engine.md` files) and set
+   transpile/polyfill to it. webOS 4.x = CR53, 5.x = CR68, 6.x = CR79;
+   Tizen 3.0 = CR47 (no `async`/`await`), 6.0 = CR76 (no optional
+   chaining), 6.5 = CR85. Verify on a device or the matching
+   emulator/simulator, never desktop Chrome alone.
+2. **Release the media pipeline and DRM session on `visibilitychange` →
+   hidden.** Stop and fully tear down the player (webOS: clear `src` /
+   detach MediaSource + `unload` the DRM client; Tizen: `stop()` →
+   `close()` the AVPlay instance), stop timers, persist resume state. A
+   suspended app holding the decoder is the number-one termination cause
+   and the number-one "crashes on resume" cause.
+3. **Every screen must be fully operable with the D-pad + OK/Enter.** The
+   pointer (Magic Remote / Samsung Smart Remote) is additive;
+   certification requires D-pad operability. No hover-only menus, no
+   pointer-only actions.
+4. **Branch remote input on `event.keyCode`, never `event.key`.** Both
+   platforms report `key` unreliably for remote buttons. **Back is `461`
+   on webOS, `10009` on Tizen** — don't hardcode one for both.
+5. **Honour the Back/exit contract.** Back moves up exactly one level,
+   never dead-ends, and reaches app exit from the root. webOS: History
+   API by default, or `disableBackHistoryAPI` + `webOS.platformBack()` at
+   root. Tizen: you own the stack from the start; call
+   `tizen.application.getCurrentApplication().exit()` at root.
+6. **Know the adaptive-streaming story per platform.** webOS: **HLS only**
+   natively — DASH needs your own MSE player. Tizen: use **AVPlay** for
+   HLS/DASH/Smooth Streaming, 4K, and DRM at scale; plain `<video>` only
+   for simple progressive clips.
+7. **Tear the DRM session down with the player.** webOS: `unload` the
+   `com.webos.service.drm` client before exit / before switching DRM
+   type. Tizen: `close()` the AVPlay instance. A leaked session breaks
+   the *next* playback attempt, with a symptom far from the cause.
+8. **Assume every store submission is re-reviewed from scratch, on your
+   oldest supported OS version.** Keep that version in the regression
+   pass; bump the manifest version every submission; keep the same
+   app identity (webOS `id`; Tizen application ID **and** author
+   certificate) across updates.
+
+## Platform-specific must-knows
+
+- **Tizen — register your keys.** Only arrows, Enter, and Back arrive
+  automatically. Colour buttons, media transport, and number keys are
+  silent until `tizen.tvinputdevice.registerKeyBatch([...])` at startup.
+  webOS delivers all keys with no registration.
+- **Tizen — declare privileges and include `webapis.js`.** Every
+  `tizen.*` / `webapis.*` namespace needs its `<tizen:privilege>` in
+  `config.xml` or the call throws; `webapis.*` also needs
+  `<script src="$WEBAPIS/webapis/webapis.js">` before app code.
+- **Tizen — the video plane is a hardware overlay behind the DOM.**
+  Position it with `webapis.avplay.setDisplayRect(...)` in 1920×1080
+  coords and leave a transparent hole in your UI; keep them aligned on
+  resize.
+- **webOS — the Back button is wired to browser history by default.**
+  `history.pushState()` per navigation and handle `popstate`, or opt out
+  with `disableBackHistoryAPI`.
+- **Manifest formats differ:** webOS `appinfo.json` (JSON), Tizen
+  `config.xml` (W3C widget XML with `tizen:` extensions). Package:
+  `.ipk` vs signed `.wgt`.
 
 ## Relationship to the other skills
 
 - Framework APIs (Lightning component lifecycle, focus delegation,
-  textures) — see `lightningjs-v2-conventions`. This skill is about what
-  the *platform under the framework* does.
-- The general low-end-hardware budgets that make rule 2 matter —
+  textures) — `lightningjs-v2-conventions`. This skill is about the
+  *platform under the framework*.
+- The low-end-hardware budgets that make rule 2 matter —
   `tv-performance-constraints`.
-- The framework-agnostic focus/navigation model that webOS pointer vs
-  5-way mode feeds into — `tv-focus-and-navigation`.
+- The framework-agnostic focus model that pointer-vs-D-pad feeds into —
+  `tv-focus-and-navigation`.
 
 ## What this skill does not cover (yet)
 
-- **Samsung Tizen** — different lifecycle (`tizen.application`,
-  `visibilitychange` semantics), key codes (Back = `10009`), AVPlay media
-  API, DASH support, `.wgt` packaging, Seller Portal.
-- **Vizio / SmartCast**, **Fire TV** (web / Amazon WebView), **Comcast /
-  RDK**.
-- Native (non-web) webOS services beyond what a web app calls over Luna.
+- **Vizio / SmartCast** — SmartCast web runtime, engine baseline, remote
+  map, store process.
+- **Fire TV** — web app / Amazon WebView (Silk vs system), Amazon device
+  messaging, Amazon Appstore submission, Alexa Voice Remote key map.
+- **Comcast / RDK** — apps on RDK-based operator boxes.
+- Native (non-web) platform services beyond what a web app calls through
+  `luna://` (webOS) or `tizen.*` / `webapis.*` (Tizen).
 - Lightning 3 / Blits.
 
 See `PLANNED.md` for the intended shape of the remaining platforms.
