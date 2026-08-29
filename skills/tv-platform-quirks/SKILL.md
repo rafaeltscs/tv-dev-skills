@@ -1,30 +1,33 @@
 ---
 name: tv-platform-quirks
-description: Platform-specific quirks for shipping a web-based TV app on LG webOS, Samsung Tizen, VIZIO SmartCast (VIZIO OS), and Amazon Fire TV (Fire OS web apps) — each platform's Chromium engine baseline, app lifecycle/suspend events (visibilitychange plus webOSLaunch/webOSRelaunch on LG; Pause/Resume + app-control on Tizen; plain web semantics on VIZIO and Fire TV), remote key codes and the pointer-vs-D-pad split (Back = 461 on webOS, 10009 on Tizen, verify-on-device on VIZIO and Fire TV; Tizen also requires tizen.tvinputdevice key registration), the Back/exit contract, adaptive streaming and DRM (webOS: HLS-only + luna://com.webos.service.drm; Tizen: AVPlay with DASH/HLS + setDrm; VIZIO & Fire TV: bring-your-own MSE player + Widevine, Fire TV Web App Platform is Widevine L3), and packaging + store review (appinfo.json/.ipk/ares-cli/LG Seller Lounge; config.xml/.wgt/Tizen Studio/Samsung Apps TV Seller Office; VIZIO hosted-URL app + Preferred Developer Program; Fire TV Amazon WebView + amzn_wa.js + Amazon Appstore, plus the Vega OS split). Use whenever code targets an LG, Samsung, VIZIO, or Amazon Fire TV and touches engine/API baseline, lifecycle, remote input, video/DRM, packaging, or store review — e.g. "why does this work on my TV but not the 2019 LG", "handle the back button on Tizen", "our Samsung build crashes coming back from live TV", "which webOS versions support optional chaining", "set up the VIZIO companion library", "does our web app run on Fire TV Vega", "package the app for the LG store". Covers LG webOS, Samsung Tizen, VIZIO SmartCast, and Amazon Fire TV (Fire OS) only — Comcast/RDK and Fire TV Vega OS native apps are not in this skill; say so rather than guessing their behavior from the covered platforms.
+description: Platform-specific quirks for shipping a web-based TV app across the five platform families — LG webOS, Samsung Tizen, VIZIO SmartCast (VIZIO OS), Amazon Fire TV (Fire OS web apps), and Comcast/RDK (Firebolt on WPE WebKit). Covers each platform's engine baseline (Chromium version per webOS/Tizen release; WebKit not Chromium on RDK; no published table for VIZIO/Fire TV), app lifecycle/suspend events (visibilitychange plus webOSLaunch/webOSRelaunch on LG; Pause/Resume + app-control on Tizen; plain web semantics on VIZIO and Fire TV; the formal Firebolt Lifecycle state machine on RDK), remote key codes and the pointer-vs-D-pad split (Back = 461 on webOS, 10009 on Tizen, verify-on-device elsewhere; Tizen requires tizen.tvinputdevice key registration), the Back/exit contract, adaptive streaming and DRM (webOS HLS-only + luna://com.webos.service.drm; Tizen AVPlay + DASH/HLS + setDrm; VIZIO/Fire TV/RDK bring-your-own MSE player + Widevine), and packaging + store review (appinfo.json/.ipk/ares-cli/LG Seller Lounge; config.xml/.wgt/Tizen Studio/Samsung Apps TV Seller Office; VIZIO hosted-URL app; Fire TV Amazon WebView + amzn_wa.js + Amazon Appstore and the Vega OS split; RDK Firebolt App Manifest + per-operator ingestion & certification). Use whenever code targets an LG, Samsung, VIZIO, Amazon Fire TV, or Comcast/RDK/operator box and touches engine/API baseline, lifecycle, remote input, video/DRM, packaging, or store review — e.g. "why does this work on my TV but not the 2019 LG", "handle the back button on Tizen", "our Samsung build crashes coming back from live TV", "which webOS versions support optional chaining", "set up the VIZIO companion library", "does our web app run on Fire TV Vega", "wire up the Firebolt lifecycle for our RDK app". Does not cover Fire TV Vega OS native apps (React Native / Vega Developer Tools) or non-web TV platforms (Roku BrightScript, Android TV / Google TV native) — say so rather than guessing from the covered platforms.
 ---
 
 # TV Platform Quirks
 
 Shipping the same web-based TV app across vendors means each platform has
-its own frozen browser engine, its own lifecycle and suspend model, its
-own remote key codes, its own media/DRM stack, and its own store review.
-Code that is correct on a dev machine — and even on last year's TV — fails
-on a specific platform/firmware because an API wasn't there, a resource
-wasn't released on background, or a key code was different.
+its own browser engine, its own lifecycle and suspend model, its own
+remote key codes, its own media/DRM stack, and its own store review. Code
+that is correct on a dev machine — and even on last year's TV — fails on a
+specific platform/firmware because an API wasn't there, a resource wasn't
+released on background, or a key code was different.
 
-**This skill covers LG webOS, Samsung Tizen, VIZIO SmartCast, and Amazon
-Fire TV (the Fire OS web-app path).** Comcast/RDK is planned but not
-written, and Fire TV's new **Vega OS** is not a web-app target at all
-(React Native / Vega Developer Tools) — for either, say the skill doesn't
-cover it rather than extrapolating. The covered platforms are close in
-shape (web app, Chromium runtime, suspend-not-close lifecycle,
-D-pad-first input) but differ in concrete details — key codes, key
-registration, the media API, DRM plumbing, manifest format, delivery
-model, store — so **keep them straight and don't assume a webOS fact
-holds on Tizen, VIZIO, or Fire TV, or vice versa.** webOS and Tizen are
-well documented; VIZIO's and Fire TV's web-app docs are thinner (VIZIO
-partner-gated; Fire TV mid-migration), so those reference files flag what
-to confirm directly with the vendor.
+**This skill covers five platform families:** LG webOS, Samsung Tizen,
+VIZIO SmartCast, Amazon Fire TV (the Fire OS web-app path), and
+Comcast/RDK (Firebolt). It does **not** cover Fire TV's **Vega OS** —
+that's React Native via the Vega Developer Tools, not a web-app target —
+nor non-web TV platforms (Roku, Android TV / Google TV native). For those,
+say the skill doesn't cover it rather than extrapolating.
+
+The covered platforms are similar in shape (web app, embedded browser,
+suspend-not-close lifecycle, D-pad-first input) but differ in concrete
+details — engine family, key codes, key registration, the media API, DRM
+plumbing, manifest format, delivery model, store — so **keep them
+straight and don't assume a fact from one holds on another.** webOS and
+Tizen are well documented; VIZIO's and Fire TV's web-app docs are thinner
+(VIZIO partner-gated; Fire TV mid-migration); RDK behaviour varies by
+operator. Those reference files flag what to confirm directly with the
+vendor or operator.
 
 ## How to use this skill
 
@@ -63,9 +66,15 @@ touches.
 |---|---|
 | The Fire OS vs **Vega OS** split (a web app runs on Fire OS only); Amazon WebView (AWV) and its Appstore-independent updates; `navigator.userAgent` engine detection; Web App vs HTML5 Hybrid delivery + `amzn_wa.js` + Web App Tester; remote input (D-pad 37–40 / Enter 13; Back key code inconsistent — handle 8/27/461 + AWV default; Home & mic uncapturable; `div`/`span` not focusable); `visibilitychange` lifecycle; MSE + DASH + HLS with BYO player, Widevine L3 on the Web App Platform; "Prevent Sleep for Video Playback"; Amazon Appstore + Fire TV device targeting review | `references/fire-tv.md` |
 
+### Comcast / RDK (Firebolt)
+
+| Task involves... | Read |
+|---|---|
+| The **WPE WebKit** engine (not Chromium — use the WebKit/Safari compat column) and why Lightning dominates on RDK; the Firebolt SDK (`@firebolt-js/sdk`), RPC-over-WebSocket transport, module list, and capability/permission grants via the **Firebolt App Manifest**; the formal **Lifecycle** state machine (`initializing` / `inactive` / `foreground` / `background` / `suspended` / `unloading`, `ready()`, `close(reason)`, `finished()`) and the hard GPU/EGL-release requirement on `suspended` (blocking it → termination; RDK App Lifecycle 2.0 / MemCR hibernation); remote keys as plain `keydown` (verify per operator remote) + the `Keyboard` module for text entry; `<video>` + MSE/EME on a hardware plane behind the WPE surface, PlayReady/Widevine per operator/SoC; Mock Firebolt for off-device testing; per-operator ingestion + two-layer (Firebolt + operator premium) certification | `references/comcast-rdk.md` |
+
 Each file is self-contained and grounded in the vendor's TV developer
-docs (VIZIO's and Fire TV's web-app records are thinner — those files
-mark their gaps).
+docs (VIZIO's and Fire TV's web-app records are thinner, and RDK varies
+by operator — those files mark what to confirm directly).
 
 ## Non-negotiable conventions (all platforms)
 
@@ -74,27 +83,33 @@ mark their gaps).
    (tables in the `*-runtime-and-web-engine.md` files): webOS 4.x = CR53,
    5.x = CR68, 6.x = CR79; Tizen 3.0 = CR47 (no `async`/`await`), 6.0 =
    CR76 (no optional chaining), 6.5 = CR85. VIZIO and Fire TV publish no
-   such table — pick a conservative baseline, read `navigator.userAgent`,
-   feature-detect at runtime, and test the oldest hardware. (Fire TV's
-   Amazon WebView updates via the Appstore independently of Fire OS, so
-   the floor is the oldest AWV in the field, not the oldest OS.) Verify
-   on a device or the matching emulator/simulator, never desktop Chrome
-   alone.
-2. **Release the media pipeline and DRM session on `visibilitychange` →
-   hidden.** Stop and fully tear down the player (webOS: clear `src` /
-   detach MediaSource + `unload` the DRM client; Tizen: `stop()` →
-   `close()` the AVPlay instance), stop timers, persist resume state. A
-   suspended app holding the decoder is the number-one termination cause
-   and the number-one "crashes on resume" cause.
+   such table — conservative baseline, `navigator.userAgent`,
+   feature-detect, test the oldest hardware (Fire TV's Amazon WebView
+   updates independently of Fire OS, so the floor is the oldest AWV in
+   the field). **RDK is WPE WebKit, not Chromium** — check features
+   against the WebKit/Safari column, not Chrome. Verify on a real
+   device or the matching emulator/simulator, never desktop Chrome alone.
+2. **Release the media pipeline and GPU/DRM resources when you leave the
+   foreground.** On `visibilitychange → hidden` (webOS/Tizen/VIZIO/Fire
+   TV) or the Firebolt `background`/`suspended` transition (RDK), stop
+   and fully tear down the player (webOS: clear `src` / detach
+   MediaSource + `unload` the DRM client; Tizen: `stop()` → `close()` the
+   AVPlay instance; VIZIO/Fire TV/RDK: destroy the MSE `MediaSource` and
+   clear `<video>`), stop timers, and persist resume state. On RDK
+   `suspended` you must **also deallocate the EGL surface and GPU
+   textures** — not doing so blocks MemCR hibernation and makes you the
+   first kill target. A backgrounded app holding the decoder is the
+   number-one termination cause and the number-one "crashes on resume"
+   cause everywhere.
 3. **Every screen must be fully operable with the D-pad + OK/Enter.** The
    pointer (Magic Remote / Samsung Smart Remote) is additive;
    certification requires D-pad operability. No hover-only menus, no
    pointer-only actions.
 4. **Branch remote input on `event.keyCode`, never `event.key`.** These
    platforms report `key` unreliably for remote buttons. **Back is `461`
-   on webOS, `10009` on Tizen, and inconsistent on VIZIO and Fire TV
-   (verify on device; on Fire TV's Amazon WebView it has shown up as 8,
-   27, or 461)** — don't hardcode one across platforms.
+   on webOS, `10009` on Tizen, and not guaranteed on VIZIO, Fire TV, or
+   RDK — verify on the actual device/remote** (Fire TV's Amazon WebView
+   has shown 8, 27, or 461). Don't hardcode one across platforms.
 5. **Honour the Back/exit contract.** Back moves up exactly one level,
    never dead-ends, and reaches app exit from the root. webOS: History
    API by default, or `disableBackHistoryAPI` + `webOS.platformBack()` at
@@ -102,26 +117,29 @@ mark their gaps).
    `tizen.application.getCurrentApplication().exit()` at root. VIZIO: call
    `window.VIZIO.exitApplication()` at root. Fire TV: intercept Back,
    manage your own stack, and let the app close at the root (AWV's
-   default is history-back then close).
+   default is history-back then close). RDK: call `Lifecycle.close(reason)`
+   at root, then handle `unloading` and call `Lifecycle.finished()`.
 6. **Know the adaptive-streaming story per platform.** webOS: **HLS only**
    natively — DASH needs your own MSE player. Tizen: use **AVPlay** for
    HLS/DASH/Smooth Streaming, 4K, and DRM at scale; plain `<video>` only
-   for simple progressive clips. VIZIO and Fire TV: no native ABR player —
-   bring your own MSE player (hls.js / Shaka / dash.js) for both HLS and
-   DASH.
-7. **Tear the DRM session / player down on background and exit.** webOS:
-   `unload` the `com.webos.service.drm` client before exit / before
-   switching DRM type. Tizen: `stop()` → `close()` the AVPlay instance.
-   VIZIO / Fire TV: destroy the MSE `MediaSource` / player and clear the
-   `<video>`. A leaked session breaks the *next* playback attempt, with a
-   symptom far from the cause.
-8. **Assume every store submission is re-reviewed from scratch, on your
-   oldest supported OS version.** Keep that version in the regression
-   pass. webOS/Tizen: bump the manifest version every submission and keep
-   the same app identity (webOS `id`; Tizen application ID **and** author
-   certificate). VIZIO / Fire TV Web App: the app is hosted, so keep the
-   pre-prod / reviewed URL pinned to the submitted build during review
-   rather than serving your rolling dev branch.
+   for simple progressive clips. VIZIO, Fire TV, and RDK: no native ABR
+   player exposed to JS — bring your own MSE player (hls.js / Shaka /
+   dash.js) for both HLS and DASH.
+7. **The video plane is often a hardware overlay behind your UI.** Tizen
+   (`setDisplayRect`) and RDK (behind the WPE surface) composite decoded
+   video on a separate plane — punch a transparent hole in your UI over
+   the video rect and keep them aligned on resize. A leaked DRM/decode
+   session breaks the *next* playback attempt, with a symptom far from
+   the cause, so tear it down (rule 2) on every background/exit.
+8. **Every submission is a fresh review, on your oldest supported
+   target.** Keep that target in the regression pass. webOS/Tizen: bump
+   the manifest version and keep the same app identity (webOS `id`; Tizen
+   application ID **and** author certificate). VIZIO / Fire TV Web App:
+   the app is hosted — pin the pre-prod / reviewed URL to the submitted
+   build during review. RDK: certification is **two layers (Firebolt +
+   the operator's premium-app pass) and per-operator** — "ships on
+   Comcast" is not "ships on Sky"; each operator is its own ingestion,
+   capability grant, and cert.
 
 ## Platform-specific must-knows
 
@@ -155,10 +173,24 @@ mark their gaps).
   on **Fire OS only**. Vega OS (newer budget devices) needs a separate
   React Native build with the Vega Developer Tools — decide Fire OS /
   Vega / both up front.
+- **RDK — `suspended` is a hard resource-release contract.** On the
+  Firebolt `suspended` transition you must deallocate the EGL surface and
+  GPU textures/memory, not just pause. The platform shrinks your graphics
+  surface (often to 1×1) and may MemCR-hibernate the process; an app that
+  holds GPU memory blocks that and gets killed instead.
+- **RDK — text entry is a platform module.** Use `Keyboard.email()` /
+  `Keyboard.password()` / `Keyboard.standard()`; the platform shows its
+  own input UI and returns the string. Don't build your own on-screen
+  keyboard.
+- **RDK — capabilities are granted, not assumed.** Declare what the app
+  needs in the Firebolt App Manifest; a call for an ungranted capability
+  rejects at runtime.
 - **Delivery / manifest differ:** webOS `appinfo.json` + `.ipk`; Tizen
   `config.xml` (W3C widget XML) + signed `.wgt`; VIZIO has **no package**
   (register a hosted HTTPS URL); Fire TV wraps a hosted URL or a static
-  ZIP into an Amazon Appstore APK (or you build the APK yourself).
+  ZIP into an Amazon Appstore APK (or you build the APK yourself); RDK
+  ships a hosted **app URL + Firebolt App Manifest** that the operator
+  ingests.
 
 ## Relationship to the other skills
 
@@ -169,19 +201,24 @@ mark their gaps).
   `tv-performance-constraints`.
 - The framework-agnostic focus model that pointer-vs-D-pad feeds into —
   `tv-focus-and-navigation`.
+- On RDK, apps are very often **Lightning** — `lightningjs-v2-conventions`
+  covers that framework; this skill covers the platform under it.
 
-## What this skill does not cover (yet)
+## What this skill does not cover
 
-- **Comcast / RDK** — apps on RDK-based operator boxes (Firebolt SDK).
 - **Fire TV Vega OS native apps** — React Native 0.72 + Vega Developer
   Tools ("Kepler"). Covered here only as "a web app doesn't run there;
   it's a separate build."
+- **Non-web TV platforms** — Roku (BrightScript / SceneGraph), Android TV
+  / Google TV native (Leanback / Compose). A WebView-wrapped web app on
+  Android TV is out of scope too.
+- Smaller web-capable TV OSes not yet written up — Hisense VIDAA, Titan
+  OS, Zeasn/WhaleOS, Philips/TP Vision. Same shape as the covered
+  platforms; treat their specifics as unverified.
 - Native (non-web) platform services beyond what a web app calls through
-  `luna://` (webOS), `tizen.*` / `webapis.*` (Tizen), `window.VIZIO`, or
-  `amzn_wa.js` (Fire TV).
-- VIZIO details behind its partner-gated developer portal, and Fire TV
-  Widevine L1 through the Web App wrapper — the reference files list what
-  to confirm directly with the vendor.
+  `luna://` (webOS), `tizen.*` / `webapis.*` (Tizen), `window.VIZIO`,
+  `amzn_wa.js` (Fire TV), or the Firebolt SDK (RDK).
+- Vendor details behind partner-gated docs — VIZIO's portal, Fire TV
+  Widevine L1 through the Web App wrapper, and per-operator RDK
+  specifics. The reference files list what to confirm directly.
 - Lightning 3 / Blits.
-
-See `PLANNED.md` for the intended shape of the remaining platforms.

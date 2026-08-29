@@ -84,11 +84,21 @@ reporting:
 - Public reporting on the Fire OS → Vega OS transition (CNX Software,
   AFTVnews, Broadband TV News)
 
-Remote key codes, the Chromium-per-OS-version tables, `window.VIZIO` and
-`amzn_wa.js` names, and manifest field names (`appinfo.json`,
-`config.xml`) are short factual identifiers; the explanations and code
-patterns are original. No vendor text was reproduced verbatim. Comcast/RDK
-and Fire TV Vega OS native apps are not yet covered by that skill.
+The Comcast / RDK (Firebolt) content in the same skill was written the
+same way, synthesizing publicly available RDK and Comcast developer
+documentation:
+
+- Firebolt Documentation and API schemas — https://rdkcentral.github.io/firebolt/ and https://github.com/rdkcentral/firebolt-apis (Apache License 2.0)
+- Comcast Developer Docs — Intro to Firebolt, Hello World Guide, Baseline Firebolt APIs — https://docs.developer.comcast.com/
+- RDK Central — "Getting to Know RDK's Firebolt", and the RDK Central Wiki "App Lifecycle 2.0" page — https://rdkcentral.com/ and https://wiki.rdkcentral.com/
+
+Firebolt module and method names (`Lifecycle`, `ready()`, `close()`,
+`Keyboard`, …), the lifecycle state names, remote key codes, the
+Chromium/WebKit-per-OS-version tables, and manifest field names
+(`appinfo.json`, `config.xml`) are short factual identifiers; the
+explanations and code patterns are original. No vendor text was
+reproduced verbatim. Fire TV Vega OS native apps and non-web TV platforms
+(Roku, Android TV / Google TV native) are out of scope for this skill.
 
 If you fork or extend this repo with your own team's internal conventions,
 keep employer-specific code, credentials, asset paths, and business logic

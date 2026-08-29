@@ -1,6 +1,6 @@
 {
   "name": "tv-dev-skills",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Skills for TV/OTT app development: LightningJS conventions, remote-control focus/navigation, platform quirks, and performance constraints.",
   "author": {
     "name": "Rafael"
