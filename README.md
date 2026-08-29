@@ -20,9 +20,9 @@ and source repositories. See
 "Planned" skills are inert placeholders — they won't trigger and add no
 guidance yet.
 
-Installing the plugin also loads a short list of non-negotiable LightningJS
-v2 conventions into context at the start of every session, so the basics
-are in effect even before a skill triggers for a specific prompt.
+Each skill loads on demand: it enters context only when your prompt
+matches what that skill covers, so installing the plugin adds nothing to a
+session until a relevant task comes up.
 
 ## Installing
 

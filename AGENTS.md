@@ -17,16 +17,19 @@ tv-dev-skills/
 ├── .claude-plugin/
 │   ├── marketplace.json     # 1 plugin entry, source: "./"
 │   └── plugin.json          # the plugin manifest
-├── hooks/
-│   ├── hooks.json           # SessionStart hook
-│   └── core-conventions.md  # what it preloads
 ├── skills/
 │   └── <skill-name>/
-│       ├── SKILL.md
+│       ├── SKILL.md         # frontmatter description controls triggering
 │       └── references/*.md  # loaded on demand, one file per sub-topic
 └── eval-workspace/
     └── <skill-name>/        # eval fixtures + benchmark runs, dev tooling only
 ```
+
+Each skill is loaded on demand: when a prompt matches a skill's
+frontmatter `description`, Claude Code pulls in that `SKILL.md` (and only
+the reference files it then needs). Nothing is force-loaded at session
+start — an installed plugin costs nothing until a relevant task shows up,
+so keep every skill's triggering to its `description`.
 
 This is **one plugin bundling many skills** (all install/update/version
 together), not a marketplace of independently-installable plugins — an
@@ -42,11 +45,11 @@ points to.
 
 ### `plugin.json` gotcha
 
-Don't add explicit `skills` or `hooks` fields to `plugin.json` pointing at
-the default locations (`skills/`, `hooks/hooks.json`) — both are
-auto-discovered already, and declaring them explicitly causes a "duplicate
-hooks file" load failure (confirmed by trial). Only add those fields if
-content lives somewhere non-default.
+Don't add an explicit `skills` field to `plugin.json` pointing at the
+default `skills/` location — it's auto-discovered already. Declaring
+default locations explicitly has caused load failures in the past
+(a "duplicate hooks file" error when `hooks` was set this way). Only add
+such fields if content lives somewhere non-default.
 
 ## Adding a skill
 
@@ -85,17 +88,18 @@ metadata — it does **not** update an already-installed plugin's version.
 Use `claude plugin update <name>` instead (or uninstall/reinstall) so
 `claude plugin list` reflects the new version.
 
-## The SessionStart hook
+## No session-start preload
 
-`hooks/core-conventions.md` is a short, cheap-to-load cheat sheet of
-LightningJS v2's non-negotiable conventions, kept in sync with
-`skills/lightningjs-v2-conventions/SKILL.md`'s own list — update both
-together. It currently fires for every session regardless of which skill
-(if any) is relevant, since a single-plugin structure has no per-skill hook
-scoping. Revisit this once a second skill has real, similarly "always
-load" content of its own — either it needs its own hook, or the mechanism
-should become more targeted (e.g. scoped to matching file edits) instead of
-blanket `SessionStart`.
+An earlier version shipped a `SessionStart` hook (`hooks/core-conventions.md`)
+that `cat`-ed a LightningJS v2 cheat sheet into every session. That was
+dropped once the plugin grew past a single skill: it loaded v2 conventions
+even for sessions that never touch Lightning, and a one-plugin structure
+has no way to scope a hook to one skill. The skills' frontmatter
+`description` triggering already covers "load it when the task needs it,"
+which is all that preload was really for. If some future skill genuinely
+needs always-on context, prefer a narrowly scoped hook (matched to file
+edits or prompt content) over a blanket `SessionStart` one, and document
+why here.
 
 ## Keeping this project-agnostic
 

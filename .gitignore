@@ -1,6 +1,6 @@
 # --- Claude Code local state -------------------------------------------
 # This repo's own dev-time Claude config is not a deliverable (the plugin
-# ships from skills/ and hooks/). Ignore all of .claude/ except a
+# ships from skills/). Ignore all of .claude/ except a
 # deliberately-shared settings.json for people working ON this repo.
 # Runtime lock/state files are also covered by .git/info/exclude locally.
 .claude/*
