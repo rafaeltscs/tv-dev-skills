@@ -7,8 +7,8 @@ End users installing the plugin don't need any of this — see
 TV app development diverges hard from the web/mobile work most model
 training data covers: no DOM, no CSS, alien focus/remote-navigation models,
 brutal low-end hardware constraints, and a fragmented platform landscape
-(webOS, Tizen, VIZIO, Fire TV, Comcast/RDK). This plugin supplies that
-missing domain knowledge, starting with LightningJS.
+(webOS, Tizen, VIZIO, Fire TV, Comcast/RDK, Android TV / Google TV). This
+plugin supplies that missing domain knowledge, starting with LightningJS.
 
 ## Structure
 

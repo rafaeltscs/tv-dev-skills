@@ -92,13 +92,26 @@ documentation:
 - Comcast Developer Docs — Intro to Firebolt, Hello World Guide, Baseline Firebolt APIs — https://docs.developer.comcast.com/
 - RDK Central — "Getting to Know RDK's Firebolt", and the RDK Central Wiki "App Lifecycle 2.0" page — https://rdkcentral.com/ and https://wiki.rdkcentral.com/
 
+The Android TV / Google TV content in the same skill was written the same
+way, synthesizing publicly available Android developer documentation:
+
+- Android Developers — TV app quality guidelines (the `TV-xx` criteria)
+  and the TV apps publishing checklist — https://developer.android.com/develop/adaptive-apps/quality-guidelines/tv-app-quality and https://developer.android.com/training/tv/publishing/checklist
+- Android Developers — "Create and run a TV app", declare hardware
+  requirements, WebView, and the TV memory-optimization guide — https://developer.android.com/training/tv/ and https://developer.android.com/reference/android/webkit/WebView
+- Public reporting on the Google TV / Android TV OS relationship and
+  Android System WebView (Play Mainline) delivery
+
 Firebolt module and method names (`Lifecycle`, `ready()`, `close()`,
-`Keyboard`, …), the lifecycle state names, remote key codes, the
-Chromium/WebKit-per-OS-version tables, and manifest field names
-(`appinfo.json`, `config.xml`) are short factual identifiers; the
-explanations and code patterns are original. No vendor text was
-reproduced verbatim. Fire TV Vega OS native apps and non-web TV platforms
-(Roku, Android TV / Google TV native) are out of scope for this skill.
+`Keyboard`, …), Android manifest constants (`CATEGORY_LEANBACK_LAUNCHER`,
+`FLAG_KEEP_SCREEN_ON`) and quality-criterion IDs (`TV-DB`, `TV-NP`, …),
+the lifecycle state names, remote key codes, the Chromium/WebKit-per-OS
+tables, and manifest field names (`appinfo.json`, `config.xml`) are short
+factual identifiers; the explanations and code patterns are original. No
+vendor text was reproduced verbatim. Fire TV Vega OS native apps, native
+TV apps (Roku, Android TV / Google TV Compose/Leanback), and the internals
+of the Android TV native shell beyond the WebView bridge are out of scope
+for this skill.
 
 If you fork or extend this repo with your own team's internal conventions,
 keep employer-specific code, credentials, asset paths, and business logic
