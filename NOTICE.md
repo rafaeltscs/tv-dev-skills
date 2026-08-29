@@ -73,11 +73,22 @@ The VIZIO reference file explicitly marks the points that need
 confirmation from VIZIO's partner documentation rather than stating them
 as established fact.
 
-Remote key codes, the Chromium-per-OS-version tables, `window.VIZIO`
-method names, and manifest field names (`appinfo.json`, `config.xml`) are
-short factual identifiers; the explanations and code patterns are
-original. No vendor text was reproduced verbatim. Fire TV and Comcast/RDK
-are not yet covered by that skill.
+The Amazon Fire TV content in the same skill was written the same way,
+synthesizing publicly available Amazon developer documentation and
+reporting:
+
+- Amazon Fire TV developer docs — HTML5 Hybrid Apps overview, Web App
+  FAQ, Build and Test Your Hybrid App, Remote Control Input — https://developer.amazon.com/docs/fire-tv/
+- Amazon Appstore blog — "Extend the Reach of Your HTML5 App to the
+  Living Room", and Amazon's Vega OS / Vega Developer Tools posts — https://developer.amazon.com/apps-and-games/blogs/
+- Public reporting on the Fire OS → Vega OS transition (CNX Software,
+  AFTVnews, Broadband TV News)
+
+Remote key codes, the Chromium-per-OS-version tables, `window.VIZIO` and
+`amzn_wa.js` names, and manifest field names (`appinfo.json`,
+`config.xml`) are short factual identifiers; the explanations and code
+patterns are original. No vendor text was reproduced verbatim. Comcast/RDK
+and Fire TV Vega OS native apps are not yet covered by that skill.
 
 If you fork or extend this repo with your own team's internal conventions,
 keep employer-specific code, credentials, asset paths, and business logic
