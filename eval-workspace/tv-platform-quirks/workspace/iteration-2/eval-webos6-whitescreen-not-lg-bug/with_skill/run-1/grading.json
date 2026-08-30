@@ -1,0 +1,42 @@
+{
+  "eval_id": 3,
+  "configuration": "with_skill",
+  "summary": {
+    "pass_rate": 1,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "Identifies the cause as untranspiled optional chaining / nullish coalescing, not a webOS rendering bug, and says not to file it with LG",
+      "passed": true,
+      "evidence": "not an LG bug; do not file. cause is untranspiled ?./??"
+    },
+    {
+      "text": "Maps 2021 LG to webOS 6 / Chromium ~79 and states ?. and ?? require Chromium 80, so they SyntaxError there and take down the whole script (white screen)",
+      "passed": true,
+      "evidence": "2021 LG = webOS 6 = Chromium 79; ?./?? need CR80 -> SyntaxError kills whole bundle -> white screen"
+    },
+    {
+      "text": "Explains why 2022+ LG works (Chromium 87+ supports ?. / ?? natively)",
+      "passed": true,
+      "evidence": "2022+ LG = Chromium 87+, supports ?./?? natively"
+    },
+    {
+      "text": "Explains <script nomodule> is irrelevant here because it does not affect whether the engine can parse the syntax",
+      "passed": true,
+      "evidence": "<script nomodule> irrelevant: webOS 6 supports ES modules so it runs the module bundle; nomodule never fetched"
+    },
+    {
+      "text": "Fix is a real transpile-down / Babel target (~Chromium 79 or lower) covering node_modules, noting tsconfig target ES2020 emits ?. / ?? verbatim",
+      "passed": true,
+      "evidence": "fix: real @babel/preset-env + browserslist ~CR68, core-js for .at()/structuredClone; tsconfig ES2020 emits ?./?? verbatim"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  }
+}

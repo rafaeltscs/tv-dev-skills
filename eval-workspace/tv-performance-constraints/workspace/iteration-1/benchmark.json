@@ -1,0 +1,323 @@
+{
+  "metadata": {
+    "skill_name": "tv-performance-constraints",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "claude-sonnet-5",
+    "analyzer_model": "claude-sonnet-5",
+    "timestamp": "2026-08-30T01:15:45Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 251.8,
+        "tokens": 73450,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The image request is changed to ask the image service for a rendition sized to the on-screen cell (uses the ?w=/?h= resize params), not the raw 2000x3000 master URL",
+          "passed": true,
+          "evidence": "?w=300&h=450 rendition requested vs 2000x3000 master"
+        },
+        {
+          "text": "A cheap placeholder (solid color rect or one shared tiny texture) is shown while the image loads AND on load failure, never a blank gap or a second full image request per slot",
+          "passed": true,
+          "evidence": "shared opaque rect placeholder for loading AND failure"
+        },
+        {
+          "text": "The answer explains that decode cost and texture memory are paid at the SOURCE image's pixel size regardless of the display size, so oversized images exhaust the GPU texture budget",
+          "passed": true,
+          "evidence": "explains decode+texture paid at source pixel size (~24MB/poster)"
+        },
+        {
+          "text": "The answer references a concrete TV texture/RAM budget (e.g. tens of MB for all textures, ~1GB shared RAM, low-RAM device class) rather than treating memory as unbounded",
+          "passed": true,
+          "evidence": "cites 30-40MB texture budget, ~1GB shared RAM, low-RAM class"
+        },
+        {
+          "text": "No suggestion relies on desktop-class headroom (e.g. 'just preload all images', 'increase the cache size') without the sizing fix",
+          "passed": true,
+          "evidence": "windowing + explicit no-preload-everything; verify-on-device caveat"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 120.9,
+        "tokens": 49085,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The image request is changed to ask the image service for a rendition sized to the on-screen cell (uses the ?w=/?h= resize params), not the raw 2000x3000 master URL",
+          "passed": true,
+          "evidence": "?w=260&h=390 rendition vs master"
+        },
+        {
+          "text": "A cheap placeholder (solid color rect or one shared tiny texture) is shown while the image loads AND on load failure, never a blank gap or a second full image request per slot",
+          "passed": true,
+          "evidence": "rect placeholder behind every poster, loading+failure"
+        },
+        {
+          "text": "The answer explains that decode cost and texture memory are paid at the SOURCE image's pixel size regardless of the display size, so oversized images exhaust the GPU texture budget",
+          "passed": true,
+          "evidence": "quotes framework note: decoded at intrinsic size; ~24MB texture"
+        },
+        {
+          "text": "The answer references a concrete TV texture/RAM budget (e.g. tens of MB for all textures, ~1GB shared RAM, low-RAM device class) rather than treating memory as unbounded",
+          "passed": true,
+          "evidence": "few-hundred-MB app budget, TV texture budget vs laptop VRAM"
+        },
+        {
+          "text": "No suggestion relies on desktop-class headroom (e.g. 'just preload all images', 'increase the cache size') without the sizing fix",
+          "passed": true,
+          "evidence": "row windowing + build URLs once; no desktop-headroom assumption"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 283.5,
+        "tokens": 75663,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The redesign only realizes rows/tiles near the viewport (a window plus small buffer), not the entire catalog at mount",
+          "passed": true,
+          "evidence": "realizes only visible +/-2 view window, +/-1 image window"
+        },
+        {
+          "text": "Rows/tiles that scroll far from the viewport are released or recycled (their textures/images freed), so memory plateaus rather than climbing during a long scroll",
+          "passed": true,
+          "evidence": "rows leaving window release textures; memory plateaus"
+        },
+        {
+          "text": "The answer distinguishes the full catalog as data from the small window that exists as realized views/textures",
+          "passed": true,
+          "evidence": "explicit: full catalog = data, window = views+textures"
+        },
+        {
+          "text": "View recycling / pooling of row or tile nodes is recommended rather than creating and destroying a node per item on every scroll step",
+          "passed": true,
+          "evidence": "fixed recycled row-view pool, rebind not create/destroy"
+        },
+        {
+          "text": "The realized window is bounded to roughly one-to-two screens (an explicit small buffer), not an unbounded 'render what's been seen so far'",
+          "passed": true,
+          "evidence": "window bounded to ~5-6 rows + overscan"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 141.9,
+        "tokens": 49997,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The redesign only realizes rows/tiles near the viewport (a window plus small buffer), not the entire catalog at mount",
+          "passed": true,
+          "evidence": "render() emits only rows[start..end] + 2-row overscan"
+        },
+        {
+          "text": "Rows/tiles that scroll far from the viewport are released or recycled (their textures/images freed), so memory plateaus rather than climbing during a long scroll",
+          "passed": true,
+          "evidence": "rows outside window absent -> unmount fires -> textures freed"
+        },
+        {
+          "text": "The answer distinguishes the full catalog as data from the small window that exists as realized views/textures",
+          "passed": true,
+          "evidence": "full catalog exists as data, only a slice drawn"
+        },
+        {
+          "text": "View recycling / pooling of row or tile nodes is recommended rather than creating and destroying a node per item on every scroll step",
+          "passed": true,
+          "evidence": "recycling via unmount/rebind + bounded LRU warm cache"
+        },
+        {
+          "text": "The realized window is bounded to roughly one-to-two screens (an explicit small buffer), not an unbounded 'render what's been seen so far'",
+          "passed": true,
+          "evidence": "fixed ~9-row window, not unbounded"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 205.4,
+        "tokens": 66856,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Identifies the per-frame allocations in step(): the { value: ... } object, and the this.slides.map(...).filter(...) chain that builds a new array and spread-clones slide objects every frame",
+          "passed": true,
+          "evidence": "names {value} obj + slides.map(...).filter(...) array+spread+closures per frame"
+        },
+        {
+          "text": "Explains that per-frame allocation creates GC pressure that manifests as jank/stutter on low-end TV hardware while being invisible on a dev machine",
+          "passed": true,
+          "evidence": "per-frame allocation -> minor GC pauses inside frame budget on TV SoC"
+        },
+        {
+          "text": "The fix removes allocation from the loop: reuse hoisted scratch values and index into this.slides directly (e.g. this.slides[this.current]) instead of map+filter",
+          "passed": true,
+          "evidence": "fix: bind method once, module-level scratch, this.slides[this.current]"
+        },
+        {
+          "text": "Notes that only cheap properties (opacity / transform) should be animated per frame, and/or that reassigning the image src mid-fade forces a texture re-upload each advance so both slide textures should be kept/preloaded",
+          "passed": true,
+          "evidence": "animate alpha only; src only on advance; preload next backdrop off-thread"
+        },
+        {
+          "text": "Does not misattribute the jank solely to the fade math constant or to needing a faster device, without addressing the allocation in the frame loop",
+          "passed": true,
+          "evidence": "also 1920 rendition not master; time-based easing; unmount()"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 179.8,
+        "tokens": 53725,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Identifies the per-frame allocations in step(): the { value: ... } object, and the this.slides.map(...).filter(...) chain that builds a new array and spread-clones slide objects every frame",
+          "passed": true,
+          "evidence": "names {value} wrapper + map+filter+spread ~8 obj/2 arr/2 closures per frame"
+        },
+        {
+          "text": "Explains that per-frame allocation creates GC pressure that manifests as jank/stutter on low-end TV hardware while being invisible on a dev machine",
+          "passed": true,
+          "evidence": "small TV heap, stop-the-world minor GC lands mid-fade"
+        },
+        {
+          "text": "The fix removes allocation from the loop: reuse hoisted scratch values and index into this.slides directly (e.g. this.slides[this.current]) instead of map+filter",
+          "passed": true,
+          "evidence": "direct index this.slides[this.current], module-level helpers, no map/filter"
+        },
+        {
+          "text": "Notes that only cheap properties (opacity / transform) should be animated per frame, and/or that reassigning the image src mid-fade forces a texture re-upload each advance so both slide textures should be kept/preloaded",
+          "passed": true,
+          "evidence": "idle between transitions, src only on swap, preload + img.decode()"
+        },
+        {
+          "text": "Does not misattribute the jank solely to the fade math constant or to needing a faster device, without addressing the allocation in the frame loop",
+          "passed": true,
+          "evidence": "sized() 1920x1080; timestamp easing; unmount() + visibilitychange"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1,
+        "stddev": 0,
+        "min": 1,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 246.9,
+        "stddev": 39.2799,
+        "min": 205.4,
+        "max": 283.5
+      },
+      "tokens": {
+        "mean": 71989.6667,
+        "stddev": 4581.5109,
+        "min": 66856,
+        "max": 75663
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 1,
+        "stddev": 0,
+        "min": 1,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 147.5333,
+        "stddev": 29.8514,
+        "min": 120.9,
+        "max": 179.8
+      },
+      "tokens": {
+        "mean": 50935.6667,
+        "stddev": 2458.2964,
+        "min": 49085,
+        "max": 53725
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "+99.4",
+      "tokens": "+21054"
+    }
+  },
+  "notes": []
+}

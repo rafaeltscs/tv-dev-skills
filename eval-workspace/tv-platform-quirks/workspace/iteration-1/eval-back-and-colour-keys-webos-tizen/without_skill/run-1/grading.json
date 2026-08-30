@@ -1,0 +1,42 @@
+{
+  "eval_id": 1,
+  "configuration": "without_skill",
+  "summary": {
+    "pass_rate": 1,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "Identifies that branching on e.key is unreliable for TV remote buttons and the code should branch on e.keyCode instead",
+      "passed": true,
+      "evidence": "e.key unreliable for remote; keyCode primary, e.key desktop-only fallback"
+    },
+    {
+      "text": "States the correct Back key codes per platform: 461 on webOS and 10009 on Tizen (and that 8 / Backspace is only the dev-keyboard value)",
+      "passed": true,
+      "evidence": "Back 461 webOS / 10009 Tizen table; 8/27 desktop"
+    },
+    {
+      "text": "Explains the colour buttons fail on Tizen because Tizen delivers only arrows/Enter/Back until the app calls tizen.tvinputdevice.registerKeyBatch(...) at startup, whereas webOS needs no key registration",
+      "passed": true,
+      "evidence": "tizen.tvinputdevice.registerKey for colour keys + tv.inputdevice privilege"
+    },
+    {
+      "text": "Describes the Back/exit contract (Back goes up one level, only exits at the root) and gives the platform-correct root-exit call: History API / webOS.platformBack() on webOS, tizen.application.getCurrentApplication().exit() on Tizen — not a bare history.back() everywhere",
+      "passed": true,
+      "evidence": "own nav stack; root exit tizen...exit() / window.close(); not history.back()"
+    },
+    {
+      "text": "Does not present a single hardcoded Back keyCode or a single exit mechanism as correct for both platforms",
+      "passed": true,
+      "evidence": "keyCode map carries both platforms codes, per-platform exit branch"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "eval_id": 3,
+  "eval_name": "scroll-jank-tv-only",
+  "prompt": "Our poster grid scrolls smoothly on my laptop but stutters badly on the actual TV, and images take ages to show up. It's the same code. What's going on?",
+  "expected_skills": [
+    "tv-performance-constraints"
+  ],
+  "acceptable_also": [
+    "lightningjs-v2-conventions"
+  ],
+  "must_not": [
+    "tv-platform-quirks"
+  ],
+  "expected_output": "Low-end TV hardware framing: image sizing / CDN renditions, decode cost, texture memory budget, per-frame allocation and GC pauses, virtualization of the grid. Not a platform-quirk answer."
+}

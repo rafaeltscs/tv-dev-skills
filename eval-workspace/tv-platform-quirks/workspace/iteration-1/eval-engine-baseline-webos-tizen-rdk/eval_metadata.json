@@ -1,0 +1,15 @@
+{
+  "eval_id": 3,
+  "eval_name": "engine-baseline-webos-tizen-rdk",
+  "prompt": "Reality check on our browser-support assumptions before we promise the client. Notes from the team are in `engine-baseline.md`. We target LG 2019+, Samsung 2019+, and Comcast X1/Flex boxes, we use optional chaining / nullish coalescing / Array.at() / structuredClone() freely, we only test in desktop Chrome plus one LG C9, and there's no transpile-down. What breaks on real devices and what should we actually do?",
+  "files": [
+    "evals/files/engine-baseline.md"
+  ],
+  "assertions": [
+    "States that a specific engine baseline must be chosen per target OS version (mapping webOS/Tizen releases to their Chromium version) rather than targeting 'modern browsers'",
+    "Identifies concretely that optional chaining (?.) and nullish coalescing (??) are not supported on the older in-scope sets (e.g. webOS 4.x / Chromium 53, Tizen 6.0 / Chromium 76 and earlier) and that Array.prototype.at() / structuredClone() are newer still and will throw there",
+    "Flags that Comcast X1/Flex is RDK running WPE WebKit (not Chromium), so feature support must be checked against the WebKit/Safari compatibility column",
+    "Recommends an actual transpile-down / correct Babel targets (noting the current { targets: { esmodules: true } } preset does not lower these features) plus feature-detection or polyfills for the newer APIs",
+    "Recommends testing on the oldest promised real hardware, not just desktop Chrome and one recent LG C9"
+  ]
+}

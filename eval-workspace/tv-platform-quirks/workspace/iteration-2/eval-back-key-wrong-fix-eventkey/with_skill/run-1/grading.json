@@ -1,0 +1,42 @@
+{
+  "eval_id": 1,
+  "configuration": "with_skill",
+  "summary": {
+    "pass_rate": 1,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "Refuses to supply an event.key value and states the code must branch on event.keyCode, not event.key, for TV remote buttons",
+      "passed": true,
+      "evidence": "refuses to give an event.key value; must branch on event.keyCode"
+    },
+    {
+      "text": "Gives Back as keyCode 461 on webOS and 10009 on Tizen",
+      "passed": true,
+      "evidence": "Back 461 webOS / 10009 Tizen"
+    },
+    {
+      "text": "Identifies the colour buttons as a separate issue: Tizen requires tizen.tvinputdevice.registerKeyBatch(...) at startup before those keys are delivered, whereas webOS needs no registration",
+      "passed": true,
+      "evidence": "colour keys = separate issue: Tizen registerKeyBatch at startup; webOS none"
+    },
+    {
+      "text": "Notes the missing preventDefault() on handled keys is why Tizen sometimes runs its own Back/exit behaviour",
+      "passed": true,
+      "evidence": "missing preventDefault() is why Tizen runs its own Back/exit"
+    },
+    {
+      "text": "Does not endorse the user's plan of just adding another event.key case to the switch",
+      "passed": true,
+      "evidence": "does not endorse adding another event.key case; rewrites to keyCode switch"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  }
+}

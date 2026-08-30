@@ -1,0 +1,15 @@
+{
+  "eval_id": 2,
+  "eval_name": "avplay-not-a-firmware-bug",
+  "prompt": "On our Samsung Tizen app, after the user returns from the TV's live-TV input the next play attempt is a black screen with an AVPlay error, until we kill and relaunch. We already added a 2-second setTimeout before calling play() on resume to let the pipeline settle, plus a 3x retry loop, and it's still black. Is this a known AVPlay firmware bug we should escalate to Samsung, or is there a workaround? `player-lifecycle.js` attached.",
+  "files": [
+    "evals/files/player-lifecycle.js"
+  ],
+  "assertions": [
+    "States this is not a firmware bug and that adding a delay or retrying play() cannot work because the AVPlay native session is dead",
+    "Identifies that pause() alone on background leaves the decoder / AVPlay session / DRM session held, and the platform reclaims it (especially when the live-TV tuner takes the shared plane)",
+    "Fix tears the player down on background with avplay.stop() then avplay.close() (releasing the instance), not just pause()",
+    "Fix rebuilds the pipeline on resume (open/prepareAsync + seek to a saved playhead) instead of calling play() on the stale instance",
+    "Frames it as the general rule: release the media pipeline and GPU/DRM resources when leaving the foreground"
+  ]
+}

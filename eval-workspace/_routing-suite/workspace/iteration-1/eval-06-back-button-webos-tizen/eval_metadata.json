@@ -1,0 +1,16 @@
+{
+  "eval_id": 6,
+  "eval_name": "back-button-webos-tizen",
+  "prompt": "Need to get the Back button behaving correctly across our LG and Samsung builds — right now it either does nothing or dumps the user out of the app entirely. How should Back be wired?",
+  "expected_skills": [
+    "tv-platform-quirks"
+  ],
+  "acceptable_also": [
+    "tv-focus-and-navigation"
+  ],
+  "must_not": [
+    "lightningjs-v2-conventions",
+    "tv-performance-constraints"
+  ],
+  "expected_output": "Per-platform key codes (Back 461 webOS / 10009 Tizen), branch on keyCode, the Back/exit contract and platform-correct root-exit calls. The focus skill's Back-priority-chain is a reasonable complement."
+}

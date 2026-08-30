@@ -1,0 +1,42 @@
+{
+  "eval_id": 3,
+  "configuration": "with_skill",
+  "summary": {
+    "pass_rate": 1,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "Rejects 'requestAnimationFrame is unreliable / switch to setInterval' and explains rAF is the correct API here (setInterval would be worse)",
+      "passed": true,
+      "evidence": "keep rAF; setInterval worse (not vsync-aligned, fires while suspended, same thread)"
+    },
+    {
+      "text": "Explains the Web Worker attempt cannot help because the per-frame allocation and the patch()/render call are on the main thread",
+      "passed": true,
+      "evidence": "neither cause moves to a Worker; easing math is nanoseconds"
+    },
+    {
+      "text": "Identifies the per-frame allocations in step() (the {value:...} object and the slides.map(...).filter(...) array+spread+closures) as the GC-pressure source behind the fade stutter",
+      "passed": true,
+      "evidence": "~15 objects/arrays/closures per frame (map/filter/spread + {value} + fresh patch tree) -> minor-GC pauses"
+    },
+    {
+      "text": "Identifies the synchronous full-screen texture upload on advance (new 1920x1080 src with nothing preloaded) as the cause of the whole-screen hitch",
+      "passed": true,
+      "evidence": "un-preloaded 1920x1080 backdrop on advance = ~8MB upload + decode on swap frame"
+    },
+    {
+      "text": "Fix removes allocation from the frame loop (direct index, hoisted scratch) AND preloads the next backdrop / animates only alpha, rather than blaming the timer API",
+      "passed": true,
+      "evidence": "fix: hoisted scratch tree, direct index, two-layer preload, alpha-only, unmount()"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  }
+}

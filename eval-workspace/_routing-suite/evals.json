@@ -1,0 +1,103 @@
+{
+  "suite_name": "tv-dev-skills-routing",
+  "purpose": "Plugin-level check: given a realistic TV/OTT dev prompt that does NOT name a skill, does the right skill (or right combination) get consulted, does an adjacent-but-wrong prompt correctly consult none, and does the answer reflect that skill's domain knowledge. Tests the plugin as a whole rather than one skill in isolation.",
+  "skills": [
+    "lightningjs-v2-conventions",
+    "lightningjs-v3-conventions (PLACEHOLDER - must not be relied on)",
+    "tv-focus-and-navigation",
+    "tv-performance-constraints",
+    "tv-platform-quirks"
+  ],
+  "evals": [
+    {
+      "id": 1,
+      "name": "rail-focus-no-framework-named",
+      "prompt": "My TV app's home screen is a vertical stack of horizontal rows of posters. Left/right moves between posters fine but pressing up or down does nothing — focus won't move from one row to the next. How do I fix the navigation?",
+      "expected_skills": ["tv-focus-and-navigation"],
+      "acceptable_also": ["lightningjs-v2-conventions"],
+      "must_not": ["tv-platform-quirks"],
+      "expected_output": "Explains rail-stack vertical navigation: the container (screen) owns up/down and tracks a row index, each rail owns left/right, the rail must not consume up/down at its edges (bubble to parent), each rail remembers its last-focused index, focus change scrolls into view. Framework-agnostic focus-model language, no DOM focus."
+    },
+    {
+      "id": 2,
+      "name": "typescript-template-spec-lightning",
+      "prompt": "I've got a Lightning v2 component written in plain JS and I want to convert it to TypeScript with a real template spec — proper typing on the child refs and the props, not `any`. What's the correct structure?",
+      "expected_skills": ["lightningjs-v2-conventions"],
+      "acceptable_also": [],
+      "must_not": ["tv-focus-and-navigation", "tv-performance-constraints", "tv-platform-quirks"],
+      "expected_output": "Describes a proper TemplateSpec (extends Lightning.Component.TemplateSpec), PascalCase children vs camelCase properties, typed accessors (getByRef over tag), typed literal type configs. Lightning-v2-specific."
+    },
+    {
+      "id": 3,
+      "name": "scroll-jank-tv-only",
+      "prompt": "Our poster grid scrolls smoothly on my laptop but stutters badly on the actual TV, and images take ages to show up. It's the same code. What's going on?",
+      "expected_skills": ["tv-performance-constraints"],
+      "acceptable_also": ["lightningjs-v2-conventions"],
+      "must_not": ["tv-platform-quirks"],
+      "expected_output": "Low-end TV hardware framing: image sizing / CDN renditions, decode cost, texture memory budget, per-frame allocation and GC pauses, virtualization of the grid. Not a platform-quirk answer."
+    },
+    {
+      "id": 4,
+      "name": "crash-returning-from-live-tv-samsung",
+      "prompt": "Our app crashes (or just shows black on the next play) when the user switches to live TV and back on a 2022 Samsung set. Never happens in the browser. Any idea?",
+      "expected_skills": ["tv-platform-quirks"],
+      "acceptable_also": ["tv-performance-constraints"],
+      "must_not": ["lightningjs-v2-conventions"],
+      "expected_output": "Tizen lifecycle + media: releasing the AVPlay/decoder/DRM session on background (visibilitychange->hidden), tearing down and rebuilding the player, the decoder being reclaimed by the live-TV source. Platform-specific."
+    },
+    {
+      "id": 5,
+      "name": "hero-banner-4k-art-lightning",
+      "prompt": "Building a home-screen hero banner for our Lightning app — full-bleed 4K backdrop artwork behind a title treatment, cross-fading between five featured shows. What's the right way to build this so it holds up on a TV?",
+      "expected_skills": ["lightningjs-v2-conventions", "tv-performance-constraints"],
+      "acceptable_also": [],
+      "must_not": ["tv-platform-quirks"],
+      "expected_output": "Should draw on BOTH: Lightning texture/patch/animation mechanics AND the performance budget (don't decode 4K into a 1080p slot, size the rendition, animate alpha/transform only, keep both fade textures, no per-frame allocation)."
+    },
+    {
+      "id": 6,
+      "name": "back-button-webos-tizen",
+      "prompt": "Need to get the Back button behaving correctly across our LG and Samsung builds — right now it either does nothing or dumps the user out of the app entirely. How should Back be wired?",
+      "expected_skills": ["tv-platform-quirks"],
+      "acceptable_also": ["tv-focus-and-navigation"],
+      "must_not": ["lightningjs-v2-conventions", "tv-performance-constraints"],
+      "expected_output": "Per-platform key codes (Back 461 webOS / 10009 Tizen), branch on keyCode, the Back/exit contract and platform-correct root-exit calls. The focus skill's Back-priority-chain is a reasonable complement."
+    },
+    {
+      "id": 7,
+      "name": "blits-typescript-placeholder-guard",
+      "prompt": "We're on Lightning 3 / Blits. I want to convert one of our `.blits`-style components to TypeScript with properly typed props and state. What's the idiomatic way to type a Blits component?",
+      "expected_skills": [],
+      "acceptable_also": [],
+      "must_not": ["lightningjs-v2-conventions", "tv-focus-and-navigation", "tv-performance-constraints", "tv-platform-quirks"],
+      "expected_output": "The v3/Blits skill is a PLACEHOLDER with no content — the model should say Blits/v3 typing isn't covered yet (and must NOT apply lightningjs-v2-conventions to Blits, since v2 explicitly excludes Blits). Answering from general knowledge with a clear 'not covered by a skill' caveat is fine; silently using the v2 skill is the failure."
+    },
+    {
+      "id": 8,
+      "name": "react-native-mobile-adjacent-miss",
+      "prompt": "Adding a settings screen to our React Native mobile app — a vertical list of rows, some with toggles, some that push a detail screen. What's a clean way to structure the navigation and focus handling for it?",
+      "expected_skills": [],
+      "acceptable_also": [],
+      "must_not": ["lightningjs-v2-conventions", "lightningjs-v3-conventions", "tv-focus-and-navigation", "tv-performance-constraints", "tv-platform-quirks"],
+      "expected_output": "This is phone React Native, not a TV app — 'navigation', 'focus', 'rows', 'settings' are keyword near-misses. No TV skill should trigger; a plain RN answer is correct."
+    },
+    {
+      "id": 9,
+      "name": "grid-diagonal-navigation",
+      "prompt": "D-pad navigation in my content grid is letting focus jump diagonally when I press right near a ragged last row, and sometimes it skips a column. How should directional resolution in a grid actually work?",
+      "expected_skills": ["tv-focus-and-navigation"],
+      "acceptable_also": [],
+      "must_not": ["tv-platform-quirks", "tv-performance-constraints"],
+      "expected_output": "Spatial navigation: geometric vs index-based resolution, one strategy per container, deliberate edge behaviour, handling ragged rows, off-screen candidates. Framework-agnostic."
+    },
+    {
+      "id": 10,
+      "name": "adaptive-streaming-firetv-vizio",
+      "prompt": "We need adaptive streaming (HLS and DASH) working on Fire TV and VIZIO. There's no native player we can reach from JS on either as far as I can tell. What's the setup?",
+      "expected_skills": ["tv-platform-quirks"],
+      "acceptable_also": [],
+      "must_not": ["lightningjs-v2-conventions", "tv-focus-and-navigation"],
+      "expected_output": "Per-platform streaming story: VIZIO and Fire TV expose no native ABR player to JS — bring your own MSE player (hls.js / Shaka / dash.js), Widevine specifics, the Fire OS-only caveat for a web build. Platform-specific."
+    }
+  ]
+}

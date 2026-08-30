@@ -1,0 +1,16 @@
+{
+  "eval_id": 2,
+  "eval_name": "catalog-list-virtualization",
+  "prompt": "Our 'Browse all' screen renders the whole catalog (usually 400-800 titles) as one long scrolling list of rows. It takes several seconds to open on a TV and memory climbs the entire time the user scrolls down, and never drops when they scroll back up. How should this be built instead? `catalog-screen.js` and `_framework.md` are attached.",
+  "files": [
+    "evals/files/_framework.md",
+    "evals/files/catalog-screen.js"
+  ],
+  "assertions": [
+    "The redesign only realizes rows/tiles near the viewport (a window plus small buffer), not the entire catalog at mount",
+    "Rows/tiles that scroll far from the viewport are released or recycled (their textures/images freed), so memory plateaus rather than climbing during a long scroll",
+    "The answer distinguishes the full catalog as data from the small window that exists as realized views/textures",
+    "View recycling / pooling of row or tile nodes is recommended rather than creating and destroying a node per item on every scroll step",
+    "The realized window is bounded to roughly one-to-two screens (an explicit small buffer), not an unbounded 'render what's been seen so far'"
+  ]
+}

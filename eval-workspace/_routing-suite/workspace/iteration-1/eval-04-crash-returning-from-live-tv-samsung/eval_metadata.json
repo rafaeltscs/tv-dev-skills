@@ -1,0 +1,15 @@
+{
+  "eval_id": 4,
+  "eval_name": "crash-returning-from-live-tv-samsung",
+  "prompt": "Our app crashes (or just shows black on the next play) when the user switches to live TV and back on a 2022 Samsung set. Never happens in the browser. Any idea?",
+  "expected_skills": [
+    "tv-platform-quirks"
+  ],
+  "acceptable_also": [
+    "tv-performance-constraints"
+  ],
+  "must_not": [
+    "lightningjs-v2-conventions"
+  ],
+  "expected_output": "Tizen lifecycle + media: releasing the AVPlay/decoder/DRM session on background (visibilitychange->hidden), tearing down and rebuilding the player, the decoder being reclaimed by the live-TV source. Platform-specific."
+}

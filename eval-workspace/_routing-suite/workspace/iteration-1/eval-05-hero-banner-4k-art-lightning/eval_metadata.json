@@ -1,0 +1,14 @@
+{
+  "eval_id": 5,
+  "eval_name": "hero-banner-4k-art-lightning",
+  "prompt": "Building a home-screen hero banner for our Lightning app — full-bleed 4K backdrop artwork behind a title treatment, cross-fading between five featured shows. What's the right way to build this so it holds up on a TV?",
+  "expected_skills": [
+    "lightningjs-v2-conventions",
+    "tv-performance-constraints"
+  ],
+  "acceptable_also": [],
+  "must_not": [
+    "tv-platform-quirks"
+  ],
+  "expected_output": "Should draw on BOTH: Lightning texture/patch/animation mechanics AND the performance budget (don't decode 4K into a 1080p slot, size the rendition, animate alpha/transform only, keep both fade textures, no per-frame allocation)."
+}

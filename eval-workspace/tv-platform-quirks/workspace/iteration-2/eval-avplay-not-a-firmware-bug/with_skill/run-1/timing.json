@@ -1,0 +1,1 @@
+{ "total_tokens": 73920, "duration_ms": 170301, "total_duration_seconds": 170.3, "note": "explicitly rejected suspend()/restore() as primary; led with stop()->close() teardown" }

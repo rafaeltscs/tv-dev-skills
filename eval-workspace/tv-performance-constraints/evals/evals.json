@@ -1,0 +1,47 @@
+{
+  "skill_name": "tv-performance-constraints",
+  "evals": [
+    {
+      "id": 1,
+      "name": "poster-grid-image-sizing-and-placeholders",
+      "prompt": "This poster grid works on my laptop but on a 2020 smart TV the cells stay blank while I scroll, images fade in slowly, and after browsing a few categories the app crashes. The `artworkUrl` points at our image service which returns a 2000x3000 master but also accepts `?w=` and `?h=` resize params. Fix the component so it behaves on the TV. `poster-grid.js` and `_framework.md` (the tiny fixture framework) are attached.",
+      "files": ["evals/files/_framework.md", "evals/files/poster-grid.js"],
+      "expected_output": "Requests a CDN/image-service rendition sized to the 260x390 cell (roughly, accounting for the 1080p UI — not the 2000x3000 master) via the ?w=/?h= params instead of passing the raw master URL. Adds a cheap placeholder (solid rect / one shared tiny texture) shown while the image loads and on failure, rather than a blank hole or a second image request. Explains the mechanism: decode CPU and texture memory are paid at the source pixel size, so a 2000x3000 image in a 260x390 slot is ~24MB of texture for one poster and blows the tens-of-MB texture budget after a few screens. Ideally notes that only the on-screen window of posters should hold textures at all (ties to virtualization) but the core ask is sizing + placeholders.",
+      "assertions": [
+        "The image request is changed to ask the image service for a rendition sized to the on-screen cell (uses the ?w=/?h= resize params), not the raw 2000x3000 master URL",
+        "A cheap placeholder (solid color rect or one shared tiny texture) is shown while the image loads AND on load failure, never a blank gap or a second full image request per slot",
+        "The answer explains that decode cost and texture memory are paid at the SOURCE image's pixel size regardless of the display size, so oversized images exhaust the GPU texture budget",
+        "The answer references a concrete TV texture/RAM budget (e.g. tens of MB for all textures, ~1GB shared RAM, low-RAM device class) rather than treating memory as unbounded",
+        "No suggestion relies on desktop-class headroom (e.g. 'just preload all images', 'increase the cache size') without the sizing fix"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "catalog-list-virtualization",
+      "prompt": "Our 'Browse all' screen renders the whole catalog (usually 400-800 titles) as one long scrolling list of rows. It takes several seconds to open on a TV and memory climbs the entire time the user scrolls down, and never drops when they scroll back up. How should this be built instead? `catalog-screen.js` and `_framework.md` are attached.",
+      "files": ["evals/files/_framework.md", "evals/files/catalog-screen.js"],
+      "expected_output": "Introduces virtualization/windowing: only rows within (roughly) the viewport plus a small buffer are realized as nodes/textures; rows far from the viewport are not created or are released. Recommends recycling row/tile views as the window moves rather than building all of them. Explains that the full catalog should live as data while only a window exists as views and textures, and that leaving the viewport must release textures/images so memory plateaus during a long scroll instead of climbing. Bounds the realized set to about two screens. May mention pagination of the data and startup render order (first screen first).",
+      "assertions": [
+        "The redesign only realizes rows/tiles near the viewport (a window plus small buffer), not the entire catalog at mount",
+        "Rows/tiles that scroll far from the viewport are released or recycled (their textures/images freed), so memory plateaus rather than climbing during a long scroll",
+        "The answer distinguishes the full catalog as data from the small window that exists as realized views/textures",
+        "View recycling / pooling of row or tile nodes is recommended rather than creating and destroying a node per item on every scroll step",
+        "The realized window is bounded to roughly one-to-two screens (an explicit small buffer), not an unbounded 'render what's been seen so far'"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "hero-carousel-per-frame-allocation",
+      "prompt": "The home-screen hero carousel cross-fades between featured titles on a per-frame loop. On a TV the fade stutters and the whole home screen hitches each time it advances; on my laptop it's smooth. What's making it janky and how do I fix it? `hero-carousel.js` and `_framework.md` are attached.",
+      "files": ["evals/files/_framework.md", "evals/files/hero-carousel.js"],
+      "expected_output": "Identifies that the per-frame `step()` allocates every frame: `{ value: ... }` object, `this.slides.map(...).filter(...)` building a new array (and spread-cloning every slide object) each tick. That allocation churn drives GC pauses that show up as jank on a low-end TV even though the dev machine absorbs it. Fix: hoist/reuse scratch state, index into `this.slides` directly instead of map+filter, no object/array/closure construction inside the loop. Also flags that swapping the image `src` mid-fade forces a texture upload every advance (should preload/keep both slide textures and only animate alpha), and that only cheap properties (opacity/transform) should be animated per frame. Ideally notes a time-based delta rather than a fixed 0.08 step tied to frame rate.",
+      "assertions": [
+        "Identifies the per-frame allocations in step(): the { value: ... } object, and the this.slides.map(...).filter(...) chain that builds a new array and spread-clones slide objects every frame",
+        "Explains that per-frame allocation creates GC pressure that manifests as jank/stutter on low-end TV hardware while being invisible on a dev machine",
+        "The fix removes allocation from the loop: reuse hoisted scratch values and index into this.slides directly (e.g. this.slides[this.current]) instead of map+filter",
+        "Notes that only cheap properties (opacity / transform) should be animated per frame, and/or that reassigning the image src mid-fade forces a texture re-upload each advance so both slide textures should be kept/preloaded",
+        "Does not misattribute the jank solely to the fade math constant or to needing a faster device, without addressing the allocation in the frame loop"
+      ]
+    }
+  ]
+}

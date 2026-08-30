@@ -1,0 +1,15 @@
+{
+  "eval_id": 1,
+  "eval_name": "rail-focus-no-framework-named",
+  "prompt": "My TV app's home screen is a vertical stack of horizontal rows of posters. Left/right moves between posters fine but pressing up or down does nothing — focus won't move from one row to the next. How do I fix the navigation?",
+  "expected_skills": [
+    "tv-focus-and-navigation"
+  ],
+  "acceptable_also": [
+    "lightningjs-v2-conventions"
+  ],
+  "must_not": [
+    "tv-platform-quirks"
+  ],
+  "expected_output": "Explains rail-stack vertical navigation: the container (screen) owns up/down and tracks a row index, each rail owns left/right, the rail must not consume up/down at its edges (bubble to parent), each rail remembers its last-focused index, focus change scrolls into view. Framework-agnostic focus-model language, no DOM focus."
+}

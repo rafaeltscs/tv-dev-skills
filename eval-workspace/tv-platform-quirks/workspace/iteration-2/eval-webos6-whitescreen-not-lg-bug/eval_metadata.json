@@ -1,0 +1,15 @@
+{
+  "eval_id": 3,
+  "eval_name": "webos6-whitescreen-not-lg-bug",
+  "prompt": "Our web app white-screens on 2021 LG TVs but runs fine on 2022 and newer LG sets. We added `<script nomodule>` fallbacks and it made no difference. This smells like a webOS 6 rendering/layout bug — should we file it with LG, or is there something we can do on our side? We use optional chaining and nullish coalescing throughout, tsconfig target is ES2020, and there's no separate transpile-down step. `engine-baseline.md` attached for our build setup.",
+  "files": [
+    "evals/files/engine-baseline.md"
+  ],
+  "assertions": [
+    "Identifies the cause as untranspiled optional chaining / nullish coalescing, not a webOS rendering bug, and says not to file it with LG",
+    "Maps 2021 LG to webOS 6 / Chromium ~79 and states ?. and ?? require Chromium 80, so they SyntaxError there and take down the whole script (white screen)",
+    "Explains why 2022+ LG works (Chromium 87+ supports ?. / ?? natively)",
+    "Explains <script nomodule> is irrelevant here because it does not affect whether the engine can parse the syntax",
+    "Fix is a real transpile-down / Babel target (~Chromium 79 or lower) covering node_modules, noting tsconfig target ES2020 emits ?. / ?? verbatim"
+  ]
+}

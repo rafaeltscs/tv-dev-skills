@@ -1,0 +1,16 @@
+{
+  "eval_id": 2,
+  "eval_name": "catalog-lazyload-not-enough",
+  "prompt": "The 'Browse all' screen (400-800 titles) is slow to open on the TV and memory climbs as the user scrolls and never comes back down. We already made every poster lazy-load its image only once it's near the viewport, which helped the open time a bit, but memory still only grows. We're starting to think the TV's image decoder is just too slow and underpowered for this. `catalog-screen.js` and `_framework-v2.md` attached.",
+  "files": [
+    "evals/files/_framework-v2.md",
+    "evals/files/catalog-screen.js"
+  ],
+  "assertions": [
+    "Rejects 'the decoder is too slow' as the root cause and identifies that nothing is ever released as why memory only climbs",
+    "Explains that lazy-loading images without releasing off-screen rows still leaks, because every row stays in render()'s output and keeps its views/textures",
+    "Fix virtualizes the list: only rows near the viewport are realized; rows leaving the window have their nodes/textures released so memory plateaus",
+    "Distinguishes the full catalog as data from the small realized window of views+textures",
+    "Recommends recycling a fixed pool of row/tile views rather than creating and destroying nodes on every scroll step"
+  ]
+}

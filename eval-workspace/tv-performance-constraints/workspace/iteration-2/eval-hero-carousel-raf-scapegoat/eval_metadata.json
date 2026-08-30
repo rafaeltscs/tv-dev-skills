@@ -1,0 +1,16 @@
+{
+  "eval_id": 3,
+  "eval_name": "hero-carousel-raf-scapegoat",
+  "prompt": "The home-screen hero carousel's cross-fade stutters on the TV and the whole screen hitches each time it advances (fine on the laptop). We tried moving the fade's easing math into a Web Worker — no change. We're now wondering if requestAnimationFrame is just unreliable on these TV browsers and whether we should drive the animation off setInterval instead. `hero-carousel.js` and `_framework-v2.md` attached.",
+  "files": [
+    "evals/files/_framework-v2.md",
+    "evals/files/hero-carousel.js"
+  ],
+  "assertions": [
+    "Rejects 'requestAnimationFrame is unreliable / switch to setInterval' and explains rAF is the correct API here (setInterval would be worse)",
+    "Explains the Web Worker attempt cannot help because the per-frame allocation and the patch()/render call are on the main thread",
+    "Identifies the per-frame allocations in step() (the {value:...} object and the slides.map(...).filter(...) array+spread+closures) as the GC-pressure source behind the fade stutter",
+    "Identifies the synchronous full-screen texture upload on advance (new 1920x1080 src with nothing preloaded) as the cause of the whole-screen hitch",
+    "Fix removes allocation from the frame loop (direct index, hoisted scratch) AND preloads the next backdrop / animates only alpha, rather than blaming the timer API"
+  ]
+}

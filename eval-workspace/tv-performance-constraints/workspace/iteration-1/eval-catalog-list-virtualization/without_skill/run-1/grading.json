@@ -1,0 +1,42 @@
+{
+  "eval_id": 2,
+  "configuration": "without_skill",
+  "summary": {
+    "pass_rate": 1,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "The redesign only realizes rows/tiles near the viewport (a window plus small buffer), not the entire catalog at mount",
+      "passed": true,
+      "evidence": "render() emits only rows[start..end] + 2-row overscan"
+    },
+    {
+      "text": "Rows/tiles that scroll far from the viewport are released or recycled (their textures/images freed), so memory plateaus rather than climbing during a long scroll",
+      "passed": true,
+      "evidence": "rows outside window absent -> unmount fires -> textures freed"
+    },
+    {
+      "text": "The answer distinguishes the full catalog as data from the small window that exists as realized views/textures",
+      "passed": true,
+      "evidence": "full catalog exists as data, only a slice drawn"
+    },
+    {
+      "text": "View recycling / pooling of row or tile nodes is recommended rather than creating and destroying a node per item on every scroll step",
+      "passed": true,
+      "evidence": "recycling via unmount/rebind + bounded LRU warm cache"
+    },
+    {
+      "text": "The realized window is bounded to roughly one-to-two screens (an explicit small buffer), not an unbounded 'render what's been seen so far'",
+      "passed": true,
+      "evidence": "fixed ~9-row window, not unbounded"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  }
+}

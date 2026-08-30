@@ -1,0 +1,14 @@
+{
+  "eval_id": 9,
+  "eval_name": "grid-diagonal-navigation",
+  "prompt": "D-pad navigation in my content grid is letting focus jump diagonally when I press right near a ragged last row, and sometimes it skips a column. How should directional resolution in a grid actually work?",
+  "expected_skills": [
+    "tv-focus-and-navigation"
+  ],
+  "acceptable_also": [],
+  "must_not": [
+    "tv-platform-quirks",
+    "tv-performance-constraints"
+  ],
+  "expected_output": "Spatial navigation: geometric vs index-based resolution, one strategy per container, deliberate edge behaviour, handling ragged rows, off-screen candidates. Framework-agnostic."
+}

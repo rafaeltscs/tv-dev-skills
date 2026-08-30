@@ -1,0 +1,323 @@
+{
+  "metadata": {
+    "skill_name": "tv-platform-quirks",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "claude-sonnet-5",
+    "analyzer_model": "claude-sonnet-5",
+    "timestamp": "2026-08-30T01:41:15Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 147.1,
+        "tokens": 72739,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Refuses to supply an event.key value and states the code must branch on event.keyCode, not event.key, for TV remote buttons",
+          "passed": true,
+          "evidence": "refuses to give an event.key value; must branch on event.keyCode"
+        },
+        {
+          "text": "Gives Back as keyCode 461 on webOS and 10009 on Tizen",
+          "passed": true,
+          "evidence": "Back 461 webOS / 10009 Tizen"
+        },
+        {
+          "text": "Identifies the colour buttons as a separate issue: Tizen requires tizen.tvinputdevice.registerKeyBatch(...) at startup before those keys are delivered, whereas webOS needs no registration",
+          "passed": true,
+          "evidence": "colour keys = separate issue: Tizen registerKeyBatch at startup; webOS none"
+        },
+        {
+          "text": "Notes the missing preventDefault() on handled keys is why Tizen sometimes runs its own Back/exit behaviour",
+          "passed": true,
+          "evidence": "missing preventDefault() is why Tizen runs its own Back/exit"
+        },
+        {
+          "text": "Does not endorse the user's plan of just adding another event.key case to the switch",
+          "passed": true,
+          "evidence": "does not endorse adding another event.key case; rewrites to keyCode switch"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 129.5,
+        "tokens": 48737,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Refuses to supply an event.key value and states the code must branch on event.keyCode, not event.key, for TV remote buttons",
+          "passed": true,
+          "evidence": "premise wrong: no reliable event.key for Back; TV remotes send numeric keyCodes"
+        },
+        {
+          "text": "Gives Back as keyCode 461 on webOS and 10009 on Tizen",
+          "passed": true,
+          "evidence": "Back 461 webOS / 10009 Tizen / 8 dev keyboard"
+        },
+        {
+          "text": "Identifies the colour buttons as a separate issue: Tizen requires tizen.tvinputdevice.registerKeyBatch(...) at startup before those keys are delivered, whereas webOS needs no registration",
+          "passed": true,
+          "evidence": "red/green not a key mismatch: Tizen withholds colour keys until tizen.tvinputdevice.registerKey at startup"
+        },
+        {
+          "text": "Notes the missing preventDefault() on handled keys is why Tizen sometimes runs its own Back/exit behaviour",
+          "passed": true,
+          "evidence": "added preventDefault() on Back so platforms do not also run exit-on-Back"
+        },
+        {
+          "text": "Does not endorse the user's plan of just adding another event.key case to the switch",
+          "passed": true,
+          "evidence": "switch(e.key) -> switch(e.keyCode); explicitly not just another e.key case"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 170.3,
+        "tokens": 73920,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "States this is not a firmware bug and that adding a delay or retrying play() cannot work because the AVPlay native session is dead",
+          "passed": true,
+          "evidence": "not a firmware bug; retry/timeout cannot revive a dead native session"
+        },
+        {
+          "text": "Identifies that pause() alone on background leaves the decoder / AVPlay session / DRM session held, and the platform reclaims it (especially when the live-TV tuner takes the shared plane)",
+          "passed": true,
+          "evidence": "pause() alone leaves decoder/AVPlay/DRM held; tuner reclaims the shared plane"
+        },
+        {
+          "text": "Fix tears the player down on background with avplay.stop() then avplay.close() (releasing the instance), not just pause()",
+          "passed": true,
+          "evidence": "release on hidden: stop() -> close() (release instance), save playhead; suspend()/restore() explicitly rejected as primary"
+        },
+        {
+          "text": "Fix rebuilds the pipeline on resume (open/prepareAsync + seek to a saved playhead) instead of calling play() on the stale instance",
+          "passed": true,
+          "evidence": "rebuild on visible: open -> setDisplayRect -> prepareAsync -> seekTo -> play"
+        },
+        {
+          "text": "Frames it as the general rule: release the media pipeline and GPU/DRM resources when leaving the foreground",
+          "passed": true,
+          "evidence": "framed as the general rule: release media pipeline + GPU/DRM on leaving foreground"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 117.6,
+        "tokens": 48116,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "States this is not a firmware bug and that adding a delay or retrying play() cannot work because the AVPlay native session is dead",
+          "passed": true,
+          "evidence": "not a firmware bug; delay+retry retries the wrong op on a destroyed pipeline"
+        },
+        {
+          "text": "Identifies that pause() alone on background leaves the decoder / AVPlay session / DRM session held, and the platform reclaims it (especially when the live-TV tuner takes the shared plane)",
+          "passed": true,
+          "evidence": "decoder + video plane preempted by the tuner while suspended; stale handle"
+        },
+        {
+          "text": "Fix tears the player down on background with avplay.stop() then avplay.close() (releasing the instance), not just pause()",
+          "passed": false,
+          "evidence": "FAIL: background handler leads with suspend()/restore() (\"not pause()\"); stop()->close() teardown only appears as a fallback on restore() failure and in stopPlayback(), not as the on-background path the skill prescribes"
+        },
+        {
+          "text": "Fix rebuilds the pipeline on resume (open/prepareAsync + seek to a saved playhead) instead of calling play() on the stale instance",
+          "passed": true,
+          "evidence": "close()->open()->setDisplayRect->prepareAsync->seekTo->play rebuild (as fallback #2)"
+        },
+        {
+          "text": "Frames it as the general rule: release the media pipeline and GPU/DRM resources when leaving the foreground",
+          "passed": true,
+          "evidence": "close() in teardown; onerror -> rebuild; setDisplayRect after preemption"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 137.6,
+        "tokens": 70983,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Identifies the cause as untranspiled optional chaining / nullish coalescing, not a webOS rendering bug, and says not to file it with LG",
+          "passed": true,
+          "evidence": "not an LG bug; do not file. cause is untranspiled ?./??"
+        },
+        {
+          "text": "Maps 2021 LG to webOS 6 / Chromium ~79 and states ?. and ?? require Chromium 80, so they SyntaxError there and take down the whole script (white screen)",
+          "passed": true,
+          "evidence": "2021 LG = webOS 6 = Chromium 79; ?./?? need CR80 -> SyntaxError kills whole bundle -> white screen"
+        },
+        {
+          "text": "Explains why 2022+ LG works (Chromium 87+ supports ?. / ?? natively)",
+          "passed": true,
+          "evidence": "2022+ LG = Chromium 87+, supports ?./?? natively"
+        },
+        {
+          "text": "Explains <script nomodule> is irrelevant here because it does not affect whether the engine can parse the syntax",
+          "passed": true,
+          "evidence": "<script nomodule> irrelevant: webOS 6 supports ES modules so it runs the module bundle; nomodule never fetched"
+        },
+        {
+          "text": "Fix is a real transpile-down / Babel target (~Chromium 79 or lower) covering node_modules, noting tsconfig target ES2020 emits ?. / ?? verbatim",
+          "passed": true,
+          "evidence": "fix: real @babel/preset-env + browserslist ~CR68, core-js for .at()/structuredClone; tsconfig ES2020 emits ?./?? verbatim"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 99.3,
+        "tokens": 46454,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Identifies the cause as untranspiled optional chaining / nullish coalescing, not a webOS rendering bug, and says not to file it with LG",
+          "passed": true,
+          "evidence": "not an LG bug; parse-time SyntaxError discards the script -> white screen not partial render"
+        },
+        {
+          "text": "Maps 2021 LG to webOS 6 / Chromium ~79 and states ?. and ?? require Chromium 80, so they SyntaxError there and take down the whole script (white screen)",
+          "passed": true,
+          "evidence": "2021 LG = webOS 6.0 = Chromium 79; ?./?? shipped CR80"
+        },
+        {
+          "text": "Explains why 2022+ LG works (Chromium 87+ supports ?. / ?? natively)",
+          "passed": true,
+          "evidence": "2022 LG = webOS 22 = Chromium 87 (>=80)"
+        },
+        {
+          "text": "Explains <script nomodule> is irrelevant here because it does not affect whether the engine can parse the syntax",
+          "passed": true,
+          "evidence": "nomodule did nothing: CR79 supports modules, loads the module bundle, ignores nomodule"
+        },
+        {
+          "text": "Fix is a real transpile-down / Babel target (~Chromium 79 or lower) covering node_modules, noting tsconfig target ES2020 emits ?. / ?? verbatim",
+          "passed": true,
+          "evidence": "fix: lower tsconfig target to ES2018/19; real preset-env + .browserslistrc chrome>=68; core-js polyfills"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1,
+        "stddev": 0,
+        "min": 1,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 151.6667,
+        "stddev": 16.8215,
+        "min": 137.6,
+        "max": 170.3
+      },
+      "tokens": {
+        "mean": 72547.3333,
+        "stddev": 1477.8513,
+        "min": 70983,
+        "max": 73920
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.9333,
+        "stddev": 0.1155,
+        "min": 0.8,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 115.4667,
+        "stddev": 15.2126,
+        "min": 99.3,
+        "max": 129.5
+      },
+      "tokens": {
+        "mean": 47769,
+        "stddev": 1180.3936,
+        "min": 46454,
+        "max": 48737
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.07",
+      "time_seconds": "+36.2",
+      "tokens": "+24778"
+    }
+  },
+  "notes": []
+}

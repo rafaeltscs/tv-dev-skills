@@ -1,0 +1,323 @@
+{
+  "metadata": {
+    "skill_name": "tv-platform-quirks",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "claude-sonnet-5",
+    "analyzer_model": "claude-sonnet-5",
+    "timestamp": "2026-08-30T01:15:45Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 172.8,
+        "tokens": 77195,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Identifies that branching on e.key is unreliable for TV remote buttons and the code should branch on e.keyCode instead",
+          "passed": true,
+          "evidence": "branches on e.key -> must use e.keyCode (webOS reports Unidentified)"
+        },
+        {
+          "text": "States the correct Back key codes per platform: 461 on webOS and 10009 on Tizen (and that 8 / Backspace is only the dev-keyboard value)",
+          "passed": true,
+          "evidence": "Back 461 webOS / 10009 Tizen; 8 is dev-keyboard only"
+        },
+        {
+          "text": "Explains the colour buttons fail on Tizen because Tizen delivers only arrows/Enter/Back until the app calls tizen.tvinputdevice.registerKeyBatch(...) at startup, whereas webOS needs no key registration",
+          "passed": true,
+          "evidence": "colour keys silent on Tizen until registerKeyBatch() at startup; webOS none"
+        },
+        {
+          "text": "Describes the Back/exit contract (Back goes up one level, only exits at the root) and gives the platform-correct root-exit call: History API / webOS.platformBack() on webOS, tizen.application.getCurrentApplication().exit() on Tizen — not a bare history.back() everywhere",
+          "passed": true,
+          "evidence": "Back/exit contract: disableBackHistoryAPI + webOS.platformBack() vs tizen...exit()"
+        },
+        {
+          "text": "Does not present a single hardcoded Back keyCode or a single exit mechanism as correct for both platforms",
+          "passed": true,
+          "evidence": "per-platform BACK_KEYCODE map + exitToPlatform() branch, not one constant"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 187.7,
+        "tokens": 53584,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Identifies that branching on e.key is unreliable for TV remote buttons and the code should branch on e.keyCode instead",
+          "passed": true,
+          "evidence": "e.key unreliable for remote; keyCode primary, e.key desktop-only fallback"
+        },
+        {
+          "text": "States the correct Back key codes per platform: 461 on webOS and 10009 on Tizen (and that 8 / Backspace is only the dev-keyboard value)",
+          "passed": true,
+          "evidence": "Back 461 webOS / 10009 Tizen table; 8/27 desktop"
+        },
+        {
+          "text": "Explains the colour buttons fail on Tizen because Tizen delivers only arrows/Enter/Back until the app calls tizen.tvinputdevice.registerKeyBatch(...) at startup, whereas webOS needs no key registration",
+          "passed": true,
+          "evidence": "tizen.tvinputdevice.registerKey for colour keys + tv.inputdevice privilege"
+        },
+        {
+          "text": "Describes the Back/exit contract (Back goes up one level, only exits at the root) and gives the platform-correct root-exit call: History API / webOS.platformBack() on webOS, tizen.application.getCurrentApplication().exit() on Tizen — not a bare history.back() everywhere",
+          "passed": true,
+          "evidence": "own nav stack; root exit tizen...exit() / window.close(); not history.back()"
+        },
+        {
+          "text": "Does not present a single hardcoded Back keyCode or a single exit mechanism as correct for both platforms",
+          "passed": true,
+          "evidence": "keyCode map carries both platforms codes, per-platform exit branch"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 145.4,
+        "tokens": 72591,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Identifies that pause() alone on background leaves the AVPlay/decoder (and DRM) session held, and that the platform reclaiming/invalidating that resource while backgrounded is why the next play fails until a full relaunch",
+          "passed": true,
+          "evidence": "pause() alone leaves decoder+DRM+overlay held; platform reclaims while bg"
+        },
+        {
+          "text": "The fix tears the player down on background: avplay.stop() followed by avplay.close() (releasing the AVPlay instance), not just pause()",
+          "passed": true,
+          "evidence": "teardown: stop() then close() then setListener empty then null handle"
+        },
+        {
+          "text": "The fix persists playback position on background and rebuilds the player (open/prepareAsync + seek to saved position) on return to foreground, instead of calling play() on the torn-down/stale instance",
+          "passed": true,
+          "evidence": "persist playhead on hidden; rebuild open/setDrm/prepareAsync/seekTo on visible"
+        },
+        {
+          "text": "Frames this as the general cross-platform rule: release the media pipeline and GPU/DRM resources when leaving the foreground (signalled by visibilitychange->hidden on Tizen)",
+          "passed": true,
+          "evidence": "framed as general rule: release media pipeline + GPU/DRM on leaving foreground"
+        },
+        {
+          "text": "Does not misdiagnose the root cause as a buffering, network, or listener-ordering bug unrelated to holding the decoder/DRM session across background",
+          "passed": true,
+          "evidence": "suspend()/restore() will not survive live-TV case; onerror -> rebuild"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 112.5,
+        "tokens": 47745,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Identifies that pause() alone on background leaves the AVPlay/decoder (and DRM) session held, and that the platform reclaiming/invalidating that resource while backgrounded is why the next play fails until a full relaunch",
+          "passed": true,
+          "evidence": "singleton HW decoder+plane; getState() -> NONE while bg; pause/play throw"
+        },
+        {
+          "text": "The fix tears the player down on background: avplay.stop() followed by avplay.close() (releasing the AVPlay instance), not just pause()",
+          "passed": true,
+          "evidence": "on hide: getCurrentTime, stop() frees decoder, close() releases session"
+        },
+        {
+          "text": "The fix persists playback position on background and rebuilds the player (open/prepareAsync + seek to saved position) on return to foreground, instead of calling play() on the torn-down/stale instance",
+          "passed": true,
+          "evidence": "save resumePositionMs; on return open->setListener->setDisplayRect->prepareAsync->seekTo"
+        },
+        {
+          "text": "Frames this as the general cross-platform rule: release the media pipeline and GPU/DRM resources when leaving the foreground (signalled by visibilitychange->hidden on Tizen)",
+          "passed": true,
+          "evidence": "treat backgrounded as release the decoder and rebuild later"
+        },
+        {
+          "text": "Does not misdiagnose the root cause as a buffering, network, or listener-ordering bug unrelated to holding the decoder/DRM session across background",
+          "passed": true,
+          "evidence": "route onerror through rebuild path; gate play() on getState()"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 168.8,
+        "tokens": 77435,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "States that a specific engine baseline must be chosen per target OS version (mapping webOS/Tizen releases to their Chromium version) rather than targeting 'modern browsers'",
+          "passed": true,
+          "evidence": "explicit per-release table: webOS 4.x CR53 / 5 CR68 / 6 CR79; Tizen 6.0 M76 / 6.5 M85"
+        },
+        {
+          "text": "Identifies concretely that optional chaining (?.) and nullish coalescing (??) are not supported on the older in-scope sets (e.g. webOS 4.x / Chromium 53, Tizen 6.0 / Chromium 76 and earlier) and that Array.prototype.at() / structuredClone() are newer still and will throw there",
+          "passed": true,
+          "evidence": "?. and ?? need CR80 (breaks webOS<=6 / Tizen<=6.0); .at() CR92 / structuredClone CR98 throw"
+        },
+        {
+          "text": "Flags that Comcast X1/Flex is RDK running WPE WebKit (not Chromium), so feature support must be checked against the WebKit/Safari compatibility column",
+          "passed": true,
+          "evidence": "Comcast X1/Flex = WPE WebKit not Chromium -> check Safari 15.4 column"
+        },
+        {
+          "text": "Recommends an actual transpile-down / correct Babel targets (noting the current { targets: { esmodules: true } } preset does not lower these features) plus feature-detection or polyfills for the newer APIs",
+          "passed": true,
+          "evidence": "esmodules:true does not lower these APIs; useBuiltIns usage + corejs3 + es-check"
+        },
+        {
+          "text": "Recommends testing on the oldest promised real hardware, not just desktop Chrome and one recent LG C9",
+          "passed": true,
+          "evidence": "test 2019 Samsung + C9 + Comcast dev box, not desktop Chrome + one C9"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 184.2,
+        "tokens": 51909,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "States that a specific engine baseline must be chosen per target OS version (mapping webOS/Tizen releases to their Chromium version) rather than targeting 'modern browsers'",
+          "passed": true,
+          "evidence": "approx table webOS 4.5 ~53 / 6.0 ~79; Tizen 5.0 ~63 / 6.0 ~76 (verify vs release notes)"
+        },
+        {
+          "text": "Identifies concretely that optional chaining (?.) and nullish coalescing (??) are not supported on the older in-scope sets (e.g. webOS 4.x / Chromium 53, Tizen 6.0 / Chromium 76 and earlier) and that Array.prototype.at() / structuredClone() are newer still and will throw there",
+          "passed": true,
+          "evidence": "?. and ?? SyntaxError pre-CR80 kills whole bundle; .at()/structuredClone TypeError pre-15.4"
+        },
+        {
+          "text": "Flags that Comcast X1/Flex is RDK running WPE WebKit (not Chromium), so feature support must be checked against the WebKit/Safari compatibility column",
+          "passed": true,
+          "evidence": "RDK = RDKBrowser on WPE WebKit, no Chrome mapping, feature-detect"
+        },
+        {
+          "text": "Recommends an actual transpile-down / correct Babel targets (noting the current { targets: { esmodules: true } } preset does not lower these features) plus feature-detection or polyfills for the newer APIs",
+          "passed": true,
+          "evidence": "preset-env targets esmodules polyfills nothing; core-js@3 useBuiltIns usage"
+        },
+        {
+          "text": "Recommends testing on the oldest promised real hardware, not just desktop Chrome and one recent LG C9",
+          "passed": true,
+          "evidence": "device lab LG 2019+2021, Samsung 2019+2021, legacy X1 + XiOne; ares-cli/sdb smoke"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1,
+        "stddev": 0,
+        "min": 1,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 162.3333,
+        "stddev": 14.8005,
+        "min": 145.4,
+        "max": 172.8
+      },
+      "tokens": {
+        "mean": 75740.3333,
+        "stddev": 2730.0413,
+        "min": 72591,
+        "max": 77435
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 1,
+        "stddev": 0,
+        "min": 1,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 161.4667,
+        "stddev": 42.4425,
+        "min": 112.5,
+        "max": 187.7
+      },
+      "tokens": {
+        "mean": 51079.3333,
+        "stddev": 3006.6161,
+        "min": 47745,
+        "max": 53584
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "+0.9",
+      "tokens": "+24661"
+    }
+  },
+  "notes": []
+}

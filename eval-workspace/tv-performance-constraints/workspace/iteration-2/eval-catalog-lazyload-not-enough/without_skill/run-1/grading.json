@@ -1,0 +1,42 @@
+{
+  "eval_id": 2,
+  "configuration": "without_skill",
+  "summary": {
+    "pass_rate": 1,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "Rejects 'the decoder is too slow' as the root cause and identifies that nothing is ever released as why memory only climbs",
+      "passed": true,
+      "evidence": "rejects decoder-too-slow (slow decoder = late images, not unbounded growth)"
+    },
+    {
+      "text": "Explains that lazy-loading images without releasing off-screen rows still leaks, because every row stays in render()'s output and keeps its views/textures",
+      "passed": true,
+      "evidence": "every row stays in render() output; lazy load defers upload, never releases"
+    },
+    {
+      "text": "Fix virtualizes the list: only rows near the viewport are realized; rows leaving the window have their nodes/textures released so memory plateaus",
+      "passed": true,
+      "evidence": "_visibleRange() from scrollY+viewport.h + overscan; off-window rows leave tree -> textures evictable"
+    },
+    {
+      "text": "Distinguishes the full catalog as data from the small realized window of views+textures",
+      "passed": true,
+      "evidence": "full catalog as data vs drawn slice"
+    },
+    {
+      "text": "Recommends recycling a fixed pool of row/tile views rather than creating and destroying nodes on every scroll step",
+      "passed": true,
+      "evidence": "recycle pool / rebind rather than create-destroy per scroll step"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "skill_name": "tv-platform-quirks",
+  "evals": [
+    {
+      "id": 1,
+      "name": "back-and-colour-keys-webos-tizen",
+      "prompt": "Same web build ships to LG (webOS 5/6) and Samsung (Tizen 6.0/6.5). QA on the Samsung set says the Back button does nothing on some screens and exits the whole app on others, and the coloured buttons we bound for quick filters never fire. It's fine in Chrome on the dev laptop. What's wrong and how should remote handling be structured for both platforms? `remote-input.js` attached.",
+      "files": ["evals/files/remote-input.js"],
+      "expected_output": "Points out the handler branches on `e.key` (unreliable for remote buttons on webOS/Tizen — 'Unidentified'/inconsistent) and should branch on `e.keyCode`. Gives the real Back key codes: 461 on webOS, 10009 on Tizen (not 8), and notes D-pad 37-40 / Enter 13 are consistent. Explains the coloured buttons never fire on Tizen because Tizen only delivers arrows/Enter/Back by default — the app must call `tizen.tvinputdevice.registerKeyBatch([...])` (with the colour key names) at startup, and that webOS needs no such registration. Describes the Back/exit contract: Back moves up exactly one level and only exits from the root, where webOS uses the History API (or `disableBackHistoryAPI` + `webOS.platformBack()`) and Tizen requires `tizen.application.getCurrentApplication().exit()` — the current `history.back()` is why it dead-ends or exits unpredictably. Ideally notes registering keys needs `webapis.js` + privileges in config.xml.",
+      "assertions": [
+        "Identifies that branching on e.key is unreliable for TV remote buttons and the code should branch on e.keyCode instead",
+        "States the correct Back key codes per platform: 461 on webOS and 10009 on Tizen (and that 8 / Backspace is only the dev-keyboard value)",
+        "Explains the colour buttons fail on Tizen because Tizen delivers only arrows/Enter/Back until the app calls tizen.tvinputdevice.registerKeyBatch(...) at startup, whereas webOS needs no key registration",
+        "Describes the Back/exit contract (Back goes up one level, only exits at the root) and gives the platform-correct root-exit call: History API / webOS.platformBack() on webOS, tizen.application.getCurrentApplication().exit() on Tizen — not a bare history.back() everywhere",
+        "Does not present a single hardcoded Back keyCode or a single exit mechanism as correct for both platforms"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "tizen-avplay-release-on-background",
+      "prompt": "Our Samsung Tizen app (Tizen 6.0+) plays main content through AVPlay. Bug: press Home mid-playback, come back later, hit play — screen stays black with an AVPlay error until the app is killed and relaunched. Returning from the TV's live-TV input does the same. `player-lifecycle.js` attached. What's the actual problem and the fix?",
+      "files": ["evals/files/player-lifecycle.js"],
+      "expected_output": "Diagnoses that merely calling `avplay.pause()` on `visibilitychange -> hidden` leaves the decoder / AVPlay session and its DRM session held while the app is backgrounded; the platform reclaims or invalidates that hardware resource (especially when another source like live TV takes the decoder), so the stale session fails on the next play and only a full relaunch clears it. Fix: on background (`document.hidden`), fully tear the player down — `avplay.stop()` then `avplay.close()` (release the AVPlay instance), detach listeners, and persist the current position; on return to foreground, re-`open()` / `prepareAsync()` and seek back to the saved position rather than calling `play()` on a dead instance. Notes this is the general TV rule (release the media pipeline + GPU/DRM resources when leaving the foreground) and that `visibilitychange` also fires on Tizen app exit. Ideally mentions `avplay.suspend()`/`restore()` as the lighter Tizen-specific option and the hardware video-plane/display-rect realignment on resume.",
+      "assertions": [
+        "Identifies that pause() alone on background leaves the AVPlay/decoder (and DRM) session held, and that the platform reclaiming/invalidating that resource while backgrounded is why the next play fails until a full relaunch",
+        "The fix tears the player down on background: avplay.stop() followed by avplay.close() (releasing the AVPlay instance), not just pause()",
+        "The fix persists playback position on background and rebuilds the player (open/prepareAsync + seek to saved position) on return to foreground, instead of calling play() on the torn-down/stale instance",
+        "Frames this as the general cross-platform rule: release the media pipeline and GPU/DRM resources when leaving the foreground (signalled by visibilitychange->hidden on Tizen)",
+        "Does not misdiagnose the root cause as a buffering, network, or listener-ordering bug unrelated to holding the decoder/DRM session across background"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "engine-baseline-webos-tizen-rdk",
+      "prompt": "Reality check on our browser-support assumptions before we promise the client. Notes from the team are in `engine-baseline.md`. We target LG 2019+, Samsung 2019+, and Comcast X1/Flex boxes, we use optional chaining / nullish coalescing / Array.at() / structuredClone() freely, we only test in desktop Chrome plus one LG C9, and there's no transpile-down. What breaks on real devices and what should we actually do?",
+      "files": ["evals/files/engine-baseline.md"],
+      "expected_output": "Explains you must pick an engine baseline per target OS version, not 'modern browsers'. Maps versions to engines: webOS 4.x = Chromium 53, 5.x = CR68, 6.x = CR79; Tizen 6.0 = CR76 (no optional chaining), 6.5 = CR85. So 'LG/Samsung 2019+' includes webOS 4.x (CR53: no optional chaining, no async/await-era features depending on exact version) and Tizen 5.x/6.0 where `?.` and `??` are NOT supported and `Array.prototype.at()` / `structuredClone()` are far too new — the untranspiled code will hard-error on those sets. Comcast X1/Flex is RDK, which runs WPE WebKit, not Chromium — feature support must be checked against the WebKit/Safari column, and Lightning is the norm there. Recommended actions: set real Babel targets / transpile down (the current `esmodules` preset does nothing useful here), pick the lowest Chromium/WebKit baseline and lint against it, feature-detect + polyfill (or avoid) at()/structuredClone(), and add a real-device smoke test on the oldest promised hardware rather than only the C9 and desktop Chrome.",
+      "assertions": [
+        "States that a specific engine baseline must be chosen per target OS version (mapping webOS/Tizen releases to their Chromium version) rather than targeting 'modern browsers'",
+        "Identifies concretely that optional chaining (?.) and nullish coalescing (??) are not supported on the older in-scope sets (e.g. webOS 4.x / Chromium 53, Tizen 6.0 / Chromium 76 and earlier) and that Array.prototype.at() / structuredClone() are newer still and will throw there",
+        "Flags that Comcast X1/Flex is RDK running WPE WebKit (not Chromium), so feature support must be checked against the WebKit/Safari compatibility column",
+        "Recommends an actual transpile-down / correct Babel targets (noting the current { targets: { esmodules: true } } preset does not lower these features) plus feature-detection or polyfills for the newer APIs",
+        "Recommends testing on the oldest promised real hardware, not just desktop Chrome and one recent LG C9"
+      ]
+    }
+  ]
+}

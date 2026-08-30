@@ -1,0 +1,14 @@
+{
+  "eval_id": 10,
+  "eval_name": "adaptive-streaming-firetv-vizio",
+  "prompt": "We need adaptive streaming (HLS and DASH) working on Fire TV and VIZIO. There's no native player we can reach from JS on either as far as I can tell. What's the setup?",
+  "expected_skills": [
+    "tv-platform-quirks"
+  ],
+  "acceptable_also": [],
+  "must_not": [
+    "lightningjs-v2-conventions",
+    "tv-focus-and-navigation"
+  ],
+  "expected_output": "Per-platform streaming story: VIZIO and Fire TV expose no native ABR player to JS — bring your own MSE player (hls.js / Shaka / dash.js), Widevine specifics, the Fire OS-only caveat for a web build. Platform-specific."
+}

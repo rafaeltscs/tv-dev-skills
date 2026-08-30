@@ -1,0 +1,42 @@
+{
+  "eval_id": 3,
+  "configuration": "with_skill",
+  "summary": {
+    "pass_rate": 1,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "Identifies the per-frame allocations in step(): the { value: ... } object, and the this.slides.map(...).filter(...) chain that builds a new array and spread-clones slide objects every frame",
+      "passed": true,
+      "evidence": "names {value} obj + slides.map(...).filter(...) array+spread+closures per frame"
+    },
+    {
+      "text": "Explains that per-frame allocation creates GC pressure that manifests as jank/stutter on low-end TV hardware while being invisible on a dev machine",
+      "passed": true,
+      "evidence": "per-frame allocation -> minor GC pauses inside frame budget on TV SoC"
+    },
+    {
+      "text": "The fix removes allocation from the loop: reuse hoisted scratch values and index into this.slides directly (e.g. this.slides[this.current]) instead of map+filter",
+      "passed": true,
+      "evidence": "fix: bind method once, module-level scratch, this.slides[this.current]"
+    },
+    {
+      "text": "Notes that only cheap properties (opacity / transform) should be animated per frame, and/or that reassigning the image src mid-fade forces a texture re-upload each advance so both slide textures should be kept/preloaded",
+      "passed": true,
+      "evidence": "animate alpha only; src only on advance; preload next backdrop off-thread"
+    },
+    {
+      "text": "Does not misattribute the jank solely to the fade math constant or to needing a faster device, without addressing the allocation in the frame loop",
+      "passed": true,
+      "evidence": "also 1920 rendition not master; time-based easing; unmount()"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "eval_id": 3,
+  "configuration": "without_skill",
+  "summary": {
+    "pass_rate": 1,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "Identifies the cause as untranspiled optional chaining / nullish coalescing, not a webOS rendering bug, and says not to file it with LG",
+      "passed": true,
+      "evidence": "not an LG bug; parse-time SyntaxError discards the script -> white screen not partial render"
+    },
+    {
+      "text": "Maps 2021 LG to webOS 6 / Chromium ~79 and states ?. and ?? require Chromium 80, so they SyntaxError there and take down the whole script (white screen)",
+      "passed": true,
+      "evidence": "2021 LG = webOS 6.0 = Chromium 79; ?./?? shipped CR80"
+    },
+    {
+      "text": "Explains why 2022+ LG works (Chromium 87+ supports ?. / ?? natively)",
+      "passed": true,
+      "evidence": "2022 LG = webOS 22 = Chromium 87 (>=80)"
+    },
+    {
+      "text": "Explains <script nomodule> is irrelevant here because it does not affect whether the engine can parse the syntax",
+      "passed": true,
+      "evidence": "nomodule did nothing: CR79 supports modules, loads the module bundle, ignores nomodule"
+    },
+    {
+      "text": "Fix is a real transpile-down / Babel target (~Chromium 79 or lower) covering node_modules, noting tsconfig target ES2020 emits ?. / ?? verbatim",
+      "passed": true,
+      "evidence": "fix: lower tsconfig target to ES2018/19; real preset-env + .browserslistrc chrome>=68; core-js polyfills"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  }
+}

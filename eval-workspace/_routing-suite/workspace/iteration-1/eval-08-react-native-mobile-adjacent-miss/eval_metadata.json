@@ -1,0 +1,15 @@
+{
+  "eval_id": 8,
+  "eval_name": "react-native-mobile-adjacent-miss",
+  "prompt": "Adding a settings screen to our React Native mobile app — a vertical list of rows, some with toggles, some that push a detail screen. What's a clean way to structure the navigation and focus handling for it?",
+  "expected_skills": [],
+  "acceptable_also": [],
+  "must_not": [
+    "lightningjs-v2-conventions",
+    "lightningjs-v3-conventions",
+    "tv-focus-and-navigation",
+    "tv-performance-constraints",
+    "tv-platform-quirks"
+  ],
+  "expected_output": "This is phone React Native, not a TV app — 'navigation', 'focus', 'rows', 'settings' are keyword near-misses. No TV skill should trigger; a plain RN answer is correct."
+}

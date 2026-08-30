@@ -1,0 +1,323 @@
+{
+  "metadata": {
+    "skill_name": "tv-performance-constraints",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "claude-sonnet-5",
+    "analyzer_model": "claude-sonnet-5",
+    "timestamp": "2026-08-30T01:41:15Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 220.3,
+        "tokens": 70351,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rejects the 'renderer is leaking' / 'cache or teardown bug' framing and identifies the per-poster texture SIZE as the root cause",
+          "passed": true,
+          "evidence": "rejects renderer-leak; per-poster texture SIZE is root cause"
+        },
+        {
+          "text": "Explains a decoded image costs width*height*4 bytes at the source image's resolution regardless of the display box, so a 2000x3000 master is ~24 MB whether or not it's shown small",
+          "passed": true,
+          "evidence": "decoded image = w*h*4 at source res regardless of draw box (~24MB)"
+        },
+        {
+          "text": "Explains that enlarging the LRU cache makes the OOM worse/sooner because each cached entry is a full-size texture, not that it helps",
+          "passed": true,
+          "evidence": "500-entry LRU of 24MB masters = ~12GB ceiling; bump made OOM sooner"
+        },
+        {
+          "text": "Fix requests a cell-sized rendition from the image service (?w=/?h=) instead of the master URL",
+          "passed": true,
+          "evidence": "renditionUrl() ?w=300&h=450 quantized ladder instead of master"
+        },
+        {
+          "text": "References a concrete low-end-TV texture/RAM budget (tens of MB for textures, ~1 GB shared RAM) rather than treating memory as ample",
+          "passed": true,
+          "evidence": "30-40MB graphics budget, ~1GB shared RAM cited"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 137.8,
+        "tokens": 49744,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rejects the 'renderer is leaking' / 'cache or teardown bug' framing and identifies the per-poster texture SIZE as the root cause",
+          "passed": true,
+          "evidence": "no renderer leak; live texture size+count is the cause"
+        },
+        {
+          "text": "Explains a decoded image costs width*height*4 bytes at the source image's resolution regardless of the display box, so a 2000x3000 master is ~24 MB whether or not it's shown small",
+          "passed": true,
+          "evidence": "texture memory set by source pixels not draw box; ~24MB/poster"
+        },
+        {
+          "text": "Explains that enlarging the LRU cache makes the OOM worse/sooner because each cached entry is a full-size texture, not that it helps",
+          "passed": true,
+          "evidence": "LRU bounded by count not bytes: 500x24MB ~12GB; raising it made it worse"
+        },
+        {
+          "text": "Fix requests a cell-sized rendition from the image service (?w=/?h=) instead of the master URL",
+          "passed": true,
+          "evidence": "posterUrl() ?w=260&h=390"
+        },
+        {
+          "text": "References a concrete low-end-TV texture/RAM budget (tens of MB for textures, ~1 GB shared RAM) rather than treating memory as ample",
+          "passed": true,
+          "evidence": "~100-200MB texture budget vs multi-GB laptop VRAM"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 283.7,
+        "tokens": 80603,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rejects 'the decoder is too slow' as the root cause and identifies that nothing is ever released as why memory only climbs",
+          "passed": true,
+          "evidence": "rejects decoder-too-slow; retention/lifetime bug -> memory staircases"
+        },
+        {
+          "text": "Explains that lazy-loading images without releasing off-screen rows still leaks, because every row stays in render()'s output and keeps its views/textures",
+          "passed": true,
+          "evidence": "lazy-in without release-out still grows; row node never leaves tree so LRU cannot reclaim"
+        },
+        {
+          "text": "Fix virtualizes the list: only rows near the viewport are realized; rows leaving the window have their nodes/textures released so memory plateaus",
+          "passed": true,
+          "evidence": "view/image windows from scrollY (visible +/-1); off-window rows data-only, textures free"
+        },
+        {
+          "text": "Distinguishes the full catalog as data from the small realized window of views+textures",
+          "passed": true,
+          "evidence": "data vs realized window distinguished explicitly"
+        },
+        {
+          "text": "Recommends recycling a fixed pool of row/tile views rather than creating and destroying nodes on every scroll step",
+          "passed": true,
+          "evidence": "fixed pool of ~5 row nodes rebound by field-writes, no per-step alloc"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 136.7,
+        "tokens": 49764,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rejects 'the decoder is too slow' as the root cause and identifies that nothing is ever released as why memory only climbs",
+          "passed": true,
+          "evidence": "rejects decoder-too-slow (slow decoder = late images, not unbounded growth)"
+        },
+        {
+          "text": "Explains that lazy-loading images without releasing off-screen rows still leaks, because every row stays in render()'s output and keeps its views/textures",
+          "passed": true,
+          "evidence": "every row stays in render() output; lazy load defers upload, never releases"
+        },
+        {
+          "text": "Fix virtualizes the list: only rows near the viewport are realized; rows leaving the window have their nodes/textures released so memory plateaus",
+          "passed": true,
+          "evidence": "_visibleRange() from scrollY+viewport.h + overscan; off-window rows leave tree -> textures evictable"
+        },
+        {
+          "text": "Distinguishes the full catalog as data from the small realized window of views+textures",
+          "passed": true,
+          "evidence": "full catalog as data vs drawn slice"
+        },
+        {
+          "text": "Recommends recycling a fixed pool of row/tile views rather than creating and destroying nodes on every scroll step",
+          "passed": true,
+          "evidence": "recycle pool / rebind rather than create-destroy per scroll step"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 301.9,
+        "tokens": 87168,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rejects 'requestAnimationFrame is unreliable / switch to setInterval' and explains rAF is the correct API here (setInterval would be worse)",
+          "passed": true,
+          "evidence": "keep rAF; setInterval worse (not vsync-aligned, fires while suspended, same thread)"
+        },
+        {
+          "text": "Explains the Web Worker attempt cannot help because the per-frame allocation and the patch()/render call are on the main thread",
+          "passed": true,
+          "evidence": "neither cause moves to a Worker; easing math is nanoseconds"
+        },
+        {
+          "text": "Identifies the per-frame allocations in step() (the {value:...} object and the slides.map(...).filter(...) array+spread+closures) as the GC-pressure source behind the fade stutter",
+          "passed": true,
+          "evidence": "~15 objects/arrays/closures per frame (map/filter/spread + {value} + fresh patch tree) -> minor-GC pauses"
+        },
+        {
+          "text": "Identifies the synchronous full-screen texture upload on advance (new 1920x1080 src with nothing preloaded) as the cause of the whole-screen hitch",
+          "passed": true,
+          "evidence": "un-preloaded 1920x1080 backdrop on advance = ~8MB upload + decode on swap frame"
+        },
+        {
+          "text": "Fix removes allocation from the frame loop (direct index, hoisted scratch) AND preloads the next backdrop / animates only alpha, rather than blaming the timer API",
+          "passed": true,
+          "evidence": "fix: hoisted scratch tree, direct index, two-layer preload, alpha-only, unmount()"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 230.9,
+        "tokens": 57761,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rejects 'requestAnimationFrame is unreliable / switch to setInterval' and explains rAF is the correct API here (setInterval would be worse)",
+          "passed": true,
+          "evidence": "rAF not the culprit; setInterval strictly worse"
+        },
+        {
+          "text": "Explains the Web Worker attempt cannot help because the per-frame allocation and the patch()/render call are on the main thread",
+          "passed": true,
+          "evidence": "Worker changed nothing because the arithmetic it moved was never the cost; real cost (alloc + texture upload) stays on main thread"
+        },
+        {
+          "text": "Identifies the per-frame allocations in step() (the {value:...} object and the slides.map(...).filter(...) array+spread+closures) as the GC-pressure source behind the fade stutter",
+          "passed": true,
+          "evidence": "slides.map(s=>({...s})).filter() rebuilds 8 obj + 2 arr + literal every frame -> GC pauses on small heap"
+        },
+        {
+          "text": "Identifies the synchronous full-screen texture upload on advance (new 1920x1080 src with nothing preloaded) as the cause of the whole-screen hitch",
+          "passed": true,
+          "evidence": "src re-sent every frame; advance = un-preloaded 8MB backdrop decode+upload on that frame"
+        },
+        {
+          "text": "Fix removes allocation from the frame loop (direct index, hoisted scratch) AND preloads the next backdrop / animates only alpha, rather than blaming the timer API",
+          "passed": true,
+          "evidence": "two stacked layers, src once per advance, time-based easing, unmount() cancels loop"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1,
+        "stddev": 0,
+        "min": 1,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 268.6333,
+        "stddev": 42.8357,
+        "min": 220.3,
+        "max": 301.9
+      },
+      "tokens": {
+        "mean": 79374,
+        "stddev": 8475.5946,
+        "min": 70351,
+        "max": 87168
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 1,
+        "stddev": 0,
+        "min": 1,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 168.4667,
+        "stddev": 54.0716,
+        "min": 136.7,
+        "max": 230.9
+      },
+      "tokens": {
+        "mean": 52423,
+        "stddev": 4622.8544,
+        "min": 49744,
+        "max": 57761
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "+100.2",
+      "tokens": "+26951"
+    }
+  },
+  "notes": []
+}

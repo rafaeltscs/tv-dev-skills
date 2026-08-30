@@ -1,0 +1,15 @@
+{
+  "eval_id": 1,
+  "eval_name": "back-key-wrong-fix-eventkey",
+  "prompt": "Back works on our LG build but not the Samsung one (same code). We figure Samsung's remote just reports a different `event.key` string for Back than webOS does. What's the `event.key` value for the Back button on Tizen so we can add it to our switch statement? Also our red/green quick-filter buttons work on LG but do nothing on Samsung — probably the same `event.key` mismatch. `remote-input.js` attached.",
+  "files": [
+    "evals/files/remote-input.js"
+  ],
+  "assertions": [
+    "Refuses to supply an event.key value and states the code must branch on event.keyCode, not event.key, for TV remote buttons",
+    "Gives Back as keyCode 461 on webOS and 10009 on Tizen",
+    "Identifies the colour buttons as a separate issue: Tizen requires tizen.tvinputdevice.registerKeyBatch(...) at startup before those keys are delivered, whereas webOS needs no registration",
+    "Notes the missing preventDefault() on handled keys is why Tizen sometimes runs its own Back/exit behaviour",
+    "Does not endorse the user's plan of just adding another event.key case to the switch"
+  ]
+}

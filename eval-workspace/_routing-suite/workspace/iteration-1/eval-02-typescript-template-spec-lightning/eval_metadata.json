@@ -1,0 +1,15 @@
+{
+  "eval_id": 2,
+  "eval_name": "typescript-template-spec-lightning",
+  "prompt": "I've got a Lightning v2 component written in plain JS and I want to convert it to TypeScript with a real template spec — proper typing on the child refs and the props, not `any`. What's the correct structure?",
+  "expected_skills": [
+    "lightningjs-v2-conventions"
+  ],
+  "acceptable_also": [],
+  "must_not": [
+    "tv-focus-and-navigation",
+    "tv-performance-constraints",
+    "tv-platform-quirks"
+  ],
+  "expected_output": "Describes a proper TemplateSpec (extends Lightning.Component.TemplateSpec), PascalCase children vs camelCase properties, typed accessors (getByRef over tag), typed literal type configs. Lightning-v2-specific."
+}

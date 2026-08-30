@@ -1,0 +1,42 @@
+{
+  "eval_id": 2,
+  "configuration": "without_skill",
+  "summary": {
+    "pass_rate": 0.8,
+    "passed": 4,
+    "failed": 1,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "States this is not a firmware bug and that adding a delay or retrying play() cannot work because the AVPlay native session is dead",
+      "passed": true,
+      "evidence": "not a firmware bug; delay+retry retries the wrong op on a destroyed pipeline"
+    },
+    {
+      "text": "Identifies that pause() alone on background leaves the decoder / AVPlay session / DRM session held, and the platform reclaims it (especially when the live-TV tuner takes the shared plane)",
+      "passed": true,
+      "evidence": "decoder + video plane preempted by the tuner while suspended; stale handle"
+    },
+    {
+      "text": "Fix tears the player down on background with avplay.stop() then avplay.close() (releasing the instance), not just pause()",
+      "passed": false,
+      "evidence": "FAIL: background handler leads with suspend()/restore() (\"not pause()\"); stop()->close() teardown only appears as a fallback on restore() failure and in stopPlayback(), not as the on-background path the skill prescribes"
+    },
+    {
+      "text": "Fix rebuilds the pipeline on resume (open/prepareAsync + seek to a saved playhead) instead of calling play() on the stale instance",
+      "passed": true,
+      "evidence": "close()->open()->setDisplayRect->prepareAsync->seekTo->play rebuild (as fallback #2)"
+    },
+    {
+      "text": "Frames it as the general rule: release the media pipeline and GPU/DRM resources when leaving the foreground",
+      "passed": true,
+      "evidence": "close() in teardown; onerror -> rebuild; setDisplayRect after preemption"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  }
+}

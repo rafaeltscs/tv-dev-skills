@@ -1,0 +1,16 @@
+{
+  "eval_id": 3,
+  "eval_name": "hero-carousel-per-frame-allocation",
+  "prompt": "The home-screen hero carousel cross-fades between featured titles on a per-frame loop. On a TV the fade stutters and the whole home screen hitches each time it advances; on my laptop it's smooth. What's making it janky and how do I fix it? `hero-carousel.js` and `_framework.md` are attached.",
+  "files": [
+    "evals/files/_framework.md",
+    "evals/files/hero-carousel.js"
+  ],
+  "assertions": [
+    "Identifies the per-frame allocations in step(): the { value: ... } object, and the this.slides.map(...).filter(...) chain that builds a new array and spread-clones slide objects every frame",
+    "Explains that per-frame allocation creates GC pressure that manifests as jank/stutter on low-end TV hardware while being invisible on a dev machine",
+    "The fix removes allocation from the loop: reuse hoisted scratch values and index into this.slides directly (e.g. this.slides[this.current]) instead of map+filter",
+    "Notes that only cheap properties (opacity / transform) should be animated per frame, and/or that reassigning the image src mid-fade forces a texture re-upload each advance so both slide textures should be kept/preloaded",
+    "Does not misattribute the jank solely to the fade math constant or to needing a faster device, without addressing the allocation in the frame loop"
+  ]
+}

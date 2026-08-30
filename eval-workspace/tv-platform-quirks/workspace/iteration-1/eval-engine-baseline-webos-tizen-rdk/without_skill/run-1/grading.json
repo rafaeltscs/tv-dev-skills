@@ -1,0 +1,42 @@
+{
+  "eval_id": 3,
+  "configuration": "without_skill",
+  "summary": {
+    "pass_rate": 1,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "States that a specific engine baseline must be chosen per target OS version (mapping webOS/Tizen releases to their Chromium version) rather than targeting 'modern browsers'",
+      "passed": true,
+      "evidence": "approx table webOS 4.5 ~53 / 6.0 ~79; Tizen 5.0 ~63 / 6.0 ~76 (verify vs release notes)"
+    },
+    {
+      "text": "Identifies concretely that optional chaining (?.) and nullish coalescing (??) are not supported on the older in-scope sets (e.g. webOS 4.x / Chromium 53, Tizen 6.0 / Chromium 76 and earlier) and that Array.prototype.at() / structuredClone() are newer still and will throw there",
+      "passed": true,
+      "evidence": "?. and ?? SyntaxError pre-CR80 kills whole bundle; .at()/structuredClone TypeError pre-15.4"
+    },
+    {
+      "text": "Flags that Comcast X1/Flex is RDK running WPE WebKit (not Chromium), so feature support must be checked against the WebKit/Safari compatibility column",
+      "passed": true,
+      "evidence": "RDK = RDKBrowser on WPE WebKit, no Chrome mapping, feature-detect"
+    },
+    {
+      "text": "Recommends an actual transpile-down / correct Babel targets (noting the current { targets: { esmodules: true } } preset does not lower these features) plus feature-detection or polyfills for the newer APIs",
+      "passed": true,
+      "evidence": "preset-env targets esmodules polyfills nothing; core-js@3 useBuiltIns usage"
+    },
+    {
+      "text": "Recommends testing on the oldest promised real hardware, not just desktop Chrome and one recent LG C9",
+      "passed": true,
+      "evidence": "device lab LG 2019+2021, Samsung 2019+2021, legacy X1 + XiOne; ares-cli/sdb smoke"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  }
+}

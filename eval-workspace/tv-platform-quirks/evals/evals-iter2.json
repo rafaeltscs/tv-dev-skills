@@ -1,0 +1,49 @@
+{
+  "skill_name": "tv-platform-quirks",
+  "iteration": 2,
+  "note": "Each prompt leads with a plausible wrong diagnosis the team already chased (a different event.key value; a firmware bug + retries; a webOS rendering bug + nomodule). The skill's job is to redirect to the real per-platform cause.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "back-key-wrong-fix-eventkey",
+      "prompt": "Back works on our LG build but not the Samsung one (same code). We figure Samsung's remote just reports a different `event.key` string for Back than webOS does. What's the `event.key` value for the Back button on Tizen so we can add it to our switch statement? Also our red/green quick-filter buttons work on LG but do nothing on Samsung — probably the same `event.key` mismatch. `remote-input.js` attached.",
+      "files": ["evals/files/remote-input.js"],
+      "expected_output": "Refuses the premise. `event.key` is unreliable for TV remote buttons on both webOS and Tizen (webOS often reports 'Unidentified'); the code must branch on `event.keyCode`, not add another `event.key` case. Back is keyCode 461 on webOS and 10009 on Tizen. The colour buttons are a different problem entirely: Tizen does not deliver colour/media/number keys to the app at all until `tizen.tvinputdevice.registerKeyBatch([...])` is called at startup (needs the tv.inputdevice privilege in config.xml); webOS delivers them with no registration, which is why LG works. Also: the app 'exits' on some Back presses because the handler never calls preventDefault(), so Tizen runs its default Return action. Structure: one keydown listener on keyCode, per-platform Back code, registerKeyBatch on Tizen, preventDefault on handled keys, app-owned nav stack with per-platform root exit.",
+      "assertions": [
+        "Refuses to supply an event.key value and states the code must branch on event.keyCode, not event.key, for TV remote buttons",
+        "Gives Back as keyCode 461 on webOS and 10009 on Tizen",
+        "Identifies the colour buttons as a separate issue: Tizen requires tizen.tvinputdevice.registerKeyBatch(...) at startup before those keys are delivered, whereas webOS needs no registration",
+        "Notes the missing preventDefault() on handled keys is why Tizen sometimes runs its own Back/exit behaviour",
+        "Does not endorse the user's plan of just adding another event.key case to the switch"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "avplay-not-a-firmware-bug",
+      "prompt": "On our Samsung Tizen app, after the user returns from the TV's live-TV input the next play attempt is a black screen with an AVPlay error, until we kill and relaunch. We already added a 2-second setTimeout before calling play() on resume to let the pipeline settle, plus a 3x retry loop, and it's still black. Is this a known AVPlay firmware bug we should escalate to Samsung, or is there a workaround? `player-lifecycle.js` attached.",
+      "files": ["evals/files/player-lifecycle.js"],
+      "expected_output": "It is not a firmware bug and retries/timeouts cannot fix it. On visibilitychange->hidden the code only calls avplay.pause(), so the app stays holding the AVPlay session, the hardware decoder, and the DRM session while backgrounded / while the live-TV tuner takes the shared video plane. The platform invalidates that decoder; the JS handle survives but its native session is dead, so play() (even after a delay, even retried) throws. The fix is in the app: on hidden, save the playhead then fully tear down - avplay.stop() then avplay.close() (release the instance), drop the listener; on return to foreground, rebuild from scratch - open() -> setDisplayRect -> (setDrm) -> prepareAsync -> seekTo(saved) -> play(). This is the general rule: release the media pipeline + GPU/DRM resources when leaving the foreground. suspend()/restore() is a lighter option but will not survive the live-TV case.",
+      "assertions": [
+        "States this is not a firmware bug and that adding a delay or retrying play() cannot work because the AVPlay native session is dead",
+        "Identifies that pause() alone on background leaves the decoder / AVPlay session / DRM session held, and the platform reclaims it (especially when the live-TV tuner takes the shared plane)",
+        "Fix tears the player down on background with avplay.stop() then avplay.close() (releasing the instance), not just pause()",
+        "Fix rebuilds the pipeline on resume (open/prepareAsync + seek to a saved playhead) instead of calling play() on the stale instance",
+        "Frames it as the general rule: release the media pipeline and GPU/DRM resources when leaving the foreground"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "webos6-whitescreen-not-lg-bug",
+      "prompt": "Our web app white-screens on 2021 LG TVs but runs fine on 2022 and newer LG sets. We added `<script nomodule>` fallbacks and it made no difference. This smells like a webOS 6 rendering/layout bug — should we file it with LG, or is there something we can do on our side? We use optional chaining and nullish coalescing throughout, tsconfig target is ES2020, and there's no separate transpile-down step. `engine-baseline.md` attached for our build setup.",
+      "files": ["evals/files/engine-baseline.md"],
+      "expected_output": "Not an LG bug and nomodule is the wrong tool. 2021 LG = webOS 6 = Chromium ~79; optional chaining (?.) and nullish coalescing (??) need Chromium 80, so webOS 6 misses by one version. Untranspiled, `?.`/`??` are a parse-time SyntaxError -> the whole script fails to execute -> white screen. 2022+ LG = Chromium 87+ which supports them natively, which is why newer sets are fine. `<script nomodule>` only controls module vs classic loading; it does nothing about syntax the engine can't parse. Fix on your side: set a real browserslist / Babel target at ~Chromium 79 (or lower) and actually transpile down - including node_modules, since a dependency shipping `?.` breaks the bundle too; tsconfig target ES2020 emits `?.`/`??` verbatim so tsc alone is not enough. Add es-check / eslint-plugin-compat in CI and test on a real 2021 LG.",
+      "assertions": [
+        "Identifies the cause as untranspiled optional chaining / nullish coalescing, not a webOS rendering bug, and says not to file it with LG",
+        "Maps 2021 LG to webOS 6 / Chromium ~79 and states ?. and ?? require Chromium 80, so they SyntaxError there and take down the whole script (white screen)",
+        "Explains why 2022+ LG works (Chromium 87+ supports ?. / ?? natively)",
+        "Explains <script nomodule> is irrelevant here because it does not affect whether the engine can parse the syntax",
+        "Fix is a real transpile-down / Babel target (~Chromium 79 or lower) covering node_modules, noting tsconfig target ES2020 emits ?. / ?? verbatim"
+      ]
+    }
+  ]
+}

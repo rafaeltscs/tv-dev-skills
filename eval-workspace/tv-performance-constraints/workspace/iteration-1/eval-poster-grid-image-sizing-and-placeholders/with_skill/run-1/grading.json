@@ -1,0 +1,42 @@
+{
+  "eval_id": 1,
+  "configuration": "with_skill",
+  "summary": {
+    "pass_rate": 1,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "The image request is changed to ask the image service for a rendition sized to the on-screen cell (uses the ?w=/?h= resize params), not the raw 2000x3000 master URL",
+      "passed": true,
+      "evidence": "?w=300&h=450 rendition requested vs 2000x3000 master"
+    },
+    {
+      "text": "A cheap placeholder (solid color rect or one shared tiny texture) is shown while the image loads AND on load failure, never a blank gap or a second full image request per slot",
+      "passed": true,
+      "evidence": "shared opaque rect placeholder for loading AND failure"
+    },
+    {
+      "text": "The answer explains that decode cost and texture memory are paid at the SOURCE image's pixel size regardless of the display size, so oversized images exhaust the GPU texture budget",
+      "passed": true,
+      "evidence": "explains decode+texture paid at source pixel size (~24MB/poster)"
+    },
+    {
+      "text": "The answer references a concrete TV texture/RAM budget (e.g. tens of MB for all textures, ~1GB shared RAM, low-RAM device class) rather than treating memory as unbounded",
+      "passed": true,
+      "evidence": "cites 30-40MB texture budget, ~1GB shared RAM, low-RAM class"
+    },
+    {
+      "text": "No suggestion relies on desktop-class headroom (e.g. 'just preload all images', 'increase the cache size') without the sizing fix",
+      "passed": true,
+      "evidence": "windowing + explicit no-preload-everything; verify-on-device caveat"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "eval_id": 1,
+  "eval_name": "back-and-colour-keys-webos-tizen",
+  "prompt": "Same web build ships to LG (webOS 5/6) and Samsung (Tizen 6.0/6.5). QA on the Samsung set says the Back button does nothing on some screens and exits the whole app on others, and the coloured buttons we bound for quick filters never fire. It's fine in Chrome on the dev laptop. What's wrong and how should remote handling be structured for both platforms? `remote-input.js` attached.",
+  "files": [
+    "evals/files/remote-input.js"
+  ],
+  "assertions": [
+    "Identifies that branching on e.key is unreliable for TV remote buttons and the code should branch on e.keyCode instead",
+    "States the correct Back key codes per platform: 461 on webOS and 10009 on Tizen (and that 8 / Backspace is only the dev-keyboard value)",
+    "Explains the colour buttons fail on Tizen because Tizen delivers only arrows/Enter/Back until the app calls tizen.tvinputdevice.registerKeyBatch(...) at startup, whereas webOS needs no key registration",
+    "Describes the Back/exit contract (Back goes up one level, only exits at the root) and gives the platform-correct root-exit call: History API / webOS.platformBack() on webOS, tizen.application.getCurrentApplication().exit() on Tizen — not a bare history.back() everywhere",
+    "Does not present a single hardcoded Back keyCode or a single exit mechanism as correct for both platforms"
+  ]
+}

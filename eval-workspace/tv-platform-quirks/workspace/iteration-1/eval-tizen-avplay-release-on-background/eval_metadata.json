@@ -1,0 +1,15 @@
+{
+  "eval_id": 2,
+  "eval_name": "tizen-avplay-release-on-background",
+  "prompt": "Our Samsung Tizen app (Tizen 6.0+) plays main content through AVPlay. Bug: press Home mid-playback, come back later, hit play — screen stays black with an AVPlay error until the app is killed and relaunched. Returning from the TV's live-TV input does the same. `player-lifecycle.js` attached. What's the actual problem and the fix?",
+  "files": [
+    "evals/files/player-lifecycle.js"
+  ],
+  "assertions": [
+    "Identifies that pause() alone on background leaves the AVPlay/decoder (and DRM) session held, and that the platform reclaiming/invalidating that resource while backgrounded is why the next play fails until a full relaunch",
+    "The fix tears the player down on background: avplay.stop() followed by avplay.close() (releasing the AVPlay instance), not just pause()",
+    "The fix persists playback position on background and rebuilds the player (open/prepareAsync + seek to saved position) on return to foreground, instead of calling play() on the torn-down/stale instance",
+    "Frames this as the general cross-platform rule: release the media pipeline and GPU/DRM resources when leaving the foreground (signalled by visibilitychange->hidden on Tizen)",
+    "Does not misdiagnose the root cause as a buffering, network, or listener-ordering bug unrelated to holding the decoder/DRM session across background"
+  ]
+}

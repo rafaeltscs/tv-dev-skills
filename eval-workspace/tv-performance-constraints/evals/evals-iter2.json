@@ -1,0 +1,49 @@
+{
+  "skill_name": "tv-performance-constraints",
+  "iteration": 2,
+  "note": "Mechanism hidden (uses _framework-v2.md, which does NOT state that textures decode at source resolution or that there is no virtualization). Each prompt leads with a plausible wrong diagnosis the user already chased.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "poster-grid-cache-red-herring",
+      "prompt": "Our poster grid still OOM-crashes the app on a 2020 TV after the user browses a few categories. We already added an LRU image cache and bumped it to 500 entries, and we audited our component teardown for leaks — cache and cleanup both look fine. It's smooth on the dev laptop. At this point we think the renderer itself is leaking. `poster-grid.js` and `_framework-v2.md` attached — where's the actual leak?",
+      "files": ["evals/files/_framework-v2.md", "evals/files/poster-grid.js"],
+      "expected_output": "Redirects away from the cache/teardown/renderer-leak theory. The real problem: `artworkUrl` is the 2000x3000 master and it's drawn into a 260x390 cell — a decoded image costs width*height*4 bytes at its SOURCE dimensions regardless of the box, so each poster is a ~24 MB texture and a bigger LRU cache just holds more 24 MB entries (it makes OOM arrive sooner, not later). Fix: request a cell-sized rendition via the `?w=`/`?h=` params the service accepts (~300x450 -> ~540 KB), against the ~30-40 MB whole-app texture budget of the low-RAM TV class. Should also note there is no windowing so all ~120 posters are realized at once, and add a solid-rect placeholder. The point: it's not a leak, it's the per-item texture cost.",
+      "assertions": [
+        "Rejects the 'renderer is leaking' / 'cache or teardown bug' framing and identifies the per-poster texture SIZE as the root cause",
+        "Explains a decoded image costs width*height*4 bytes at the source image's resolution regardless of the display box, so a 2000x3000 master is ~24 MB whether or not it's shown small",
+        "Explains that enlarging the LRU cache makes the OOM worse/sooner because each cached entry is a full-size texture, not that it helps",
+        "Fix requests a cell-sized rendition from the image service (?w=/?h=) instead of the master URL",
+        "References a concrete low-end-TV texture/RAM budget (tens of MB for textures, ~1 GB shared RAM) rather than treating memory as ample"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "catalog-lazyload-not-enough",
+      "prompt": "The 'Browse all' screen (400-800 titles) is slow to open on the TV and memory climbs as the user scrolls and never comes back down. We already made every poster lazy-load its image only once it's near the viewport, which helped the open time a bit, but memory still only grows. We're starting to think the TV's image decoder is just too slow and underpowered for this. `catalog-screen.js` and `_framework-v2.md` attached.",
+      "files": ["evals/files/_framework-v2.md", "evals/files/catalog-screen.js"],
+      "expected_output": "Redirects away from 'decoder too slow'. `render()` returns a node for every one of the 400-800 rows, so every row's views (and, once scrolled past, its textures) stay realized forever — lazy-loading images defers the upload but nothing is ever released, so memory can only climb. The fix is virtualization: realize only rows near the viewport (window + small overscan), and on a row leaving the window drop its nodes / null its `src` so textures free and memory plateaus. Full catalog lives as data; only a window exists as views+textures. Recycle a fixed pool of row views rather than create/destroy per scroll step. Also request slot-sized renditions. Decoder speed is a minor factor next to never releasing anything.",
+      "assertions": [
+        "Rejects 'the decoder is too slow' as the root cause and identifies that nothing is ever released as why memory only climbs",
+        "Explains that lazy-loading images without releasing off-screen rows still leaks, because every row stays in render()'s output and keeps its views/textures",
+        "Fix virtualizes the list: only rows near the viewport are realized; rows leaving the window have their nodes/textures released so memory plateaus",
+        "Distinguishes the full catalog as data from the small realized window of views+textures",
+        "Recommends recycling a fixed pool of row/tile views rather than creating and destroying nodes on every scroll step"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "hero-carousel-raf-scapegoat",
+      "prompt": "The home-screen hero carousel's cross-fade stutters on the TV and the whole screen hitches each time it advances (fine on the laptop). We tried moving the fade's easing math into a Web Worker — no change. We're now wondering if requestAnimationFrame is just unreliable on these TV browsers and whether we should drive the animation off setInterval instead. `hero-carousel.js` and `_framework-v2.md` attached.",
+      "files": ["evals/files/_framework-v2.md", "evals/files/hero-carousel.js"],
+      "expected_output": "Redirects away from 'rAF is unreliable / use setInterval' and from the Web Worker attempt. Two real causes, both on the main thread: (1) the per-frame `step()` allocates every frame - `{value:...}` object, `this.slides.map(...).filter(...)` (new array + spread-copied objects + closures) - creating GC pressure that stutters a low-end TV; a Worker can't help because the allocation and the `patch()` are on the main thread. (2) each advance points the live backdrop element at a fresh 1920x1080 image with nothing preloaded, forcing a synchronous decode + texture upload on that frame = the whole-screen hitch. Fix: zero allocation in the loop (index `this.slides[this.current]` directly, hoist scratch, bind once), animate only alpha, set `src` only on advance, preload the next backdrop into a hidden layer, request a 1920-wide rendition, time-based easing, stop the loop in `unmount()`. rAF is fine; setInterval would be worse.",
+      "assertions": [
+        "Rejects 'requestAnimationFrame is unreliable / switch to setInterval' and explains rAF is the correct API here (setInterval would be worse)",
+        "Explains the Web Worker attempt cannot help because the per-frame allocation and the patch()/render call are on the main thread",
+        "Identifies the per-frame allocations in step() (the {value:...} object and the slides.map(...).filter(...) array+spread+closures) as the GC-pressure source behind the fade stutter",
+        "Identifies the synchronous full-screen texture upload on advance (new 1920x1080 src with nothing preloaded) as the cause of the whole-screen hitch",
+        "Fix removes allocation from the frame loop (direct index, hoisted scratch) AND preloads the next backdrop / animates only alpha, rather than blaming the timer API"
+      ]
+    }
+  ]
+}

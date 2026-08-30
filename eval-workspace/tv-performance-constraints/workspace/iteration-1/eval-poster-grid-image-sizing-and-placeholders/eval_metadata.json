@@ -1,0 +1,16 @@
+{
+  "eval_id": 1,
+  "eval_name": "poster-grid-image-sizing-and-placeholders",
+  "prompt": "This poster grid works on my laptop but on a 2020 smart TV the cells stay blank while I scroll, images fade in slowly, and after browsing a few categories the app crashes. The `artworkUrl` points at our image service which returns a 2000x3000 master but also accepts `?w=` and `?h=` resize params. Fix the component so it behaves on the TV. `poster-grid.js` and `_framework.md` (the tiny fixture framework) are attached.",
+  "files": [
+    "evals/files/_framework.md",
+    "evals/files/poster-grid.js"
+  ],
+  "assertions": [
+    "The image request is changed to ask the image service for a rendition sized to the on-screen cell (uses the ?w=/?h= resize params), not the raw 2000x3000 master URL",
+    "A cheap placeholder (solid color rect or one shared tiny texture) is shown while the image loads AND on load failure, never a blank gap or a second full image request per slot",
+    "The answer explains that decode cost and texture memory are paid at the SOURCE image's pixel size regardless of the display size, so oversized images exhaust the GPU texture budget",
+    "The answer references a concrete TV texture/RAM budget (e.g. tens of MB for all textures, ~1GB shared RAM, low-RAM device class) rather than treating memory as unbounded",
+    "No suggestion relies on desktop-class headroom (e.g. 'just preload all images', 'increase the cache size') without the sizing fix"
+  ]
+}

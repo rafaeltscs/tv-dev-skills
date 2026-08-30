@@ -1,0 +1,16 @@
+{
+  "eval_id": 1,
+  "eval_name": "poster-grid-cache-red-herring",
+  "prompt": "Our poster grid still OOM-crashes the app on a 2020 TV after the user browses a few categories. We already added an LRU image cache and bumped it to 500 entries, and we audited our component teardown for leaks — cache and cleanup both look fine. It's smooth on the dev laptop. At this point we think the renderer itself is leaking. `poster-grid.js` and `_framework-v2.md` attached — where's the actual leak?",
+  "files": [
+    "evals/files/_framework-v2.md",
+    "evals/files/poster-grid.js"
+  ],
+  "assertions": [
+    "Rejects the 'renderer is leaking' / 'cache or teardown bug' framing and identifies the per-poster texture SIZE as the root cause",
+    "Explains a decoded image costs width*height*4 bytes at the source image's resolution regardless of the display box, so a 2000x3000 master is ~24 MB whether or not it's shown small",
+    "Explains that enlarging the LRU cache makes the OOM worse/sooner because each cached entry is a full-size texture, not that it helps",
+    "Fix requests a cell-sized rendition from the image service (?w=/?h=) instead of the master URL",
+    "References a concrete low-end-TV texture/RAM budget (tens of MB for textures, ~1 GB shared RAM) rather than treating memory as ample"
+  ]
+}
