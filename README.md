@@ -24,7 +24,7 @@ Each skill loads on demand: it enters context only when your prompt
 matches what that skill covers, so installing the plugin adds nothing to a
 session until a relevant task comes up.
 
-## Installing
+## Installing (Claude Code)
 
 **One-off, in a single project:**
 
@@ -52,6 +52,41 @@ Commit this to the project's `.claude/settings.json`:
 
 Anyone who clones the project gets the plugin enabled with no manual
 `/plugin` step.
+
+## Installing (Codex, Cursor, GitHub Copilot, other agents)
+
+Agents outside Claude Code have no on-demand skill loader, so the installer
+**vendors the skill markdown into your project** and wires up a router that
+tells the agent to open a `SKILL.md` only when the task matches it.
+
+From your project root:
+
+```bash
+npx github:rafaeltscs/tv-dev-skills
+```
+
+or, if you've cloned this repo:
+
+```bash
+node path/to/tv-dev-skills/tools/install.mjs --dir=/path/to/your/app
+```
+
+That does two things:
+
+1. Copies the skills to `.agent-skills/tv-dev-skills/` in your project.
+2. Writes a marker-delimited router block into `AGENTS.md` and
+   `.github/copilot-instructions.md`, plus one `.cursor/rules/tv-dev-skills-*.mdc`
+   per skill (each with the skill's `description`, so Cursor attaches it by
+   relevance).
+
+Flags: `--targets=agents,cursor,copilot` to pick a subset, `--dest=PATH` to
+change where skills land, `--dry-run` to preview. Re-run any time to pull
+updates — the generated blocks and rule files are replaced in place and
+stale ones are pruned.
+
+Commit `.agent-skills/` (and the generated router files) for a reproducible
+checkout, or add `.agent-skills/` to `.gitignore` and re-run the installer
+after each pull.
 
 ## License
 

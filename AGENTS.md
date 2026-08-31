@@ -4,6 +4,12 @@ Instructions for whoever (human or agent) works on this repo's content.
 End users installing the plugin don't need any of this — see
 [README.md](README.md) for that.
 
+> Consuming these skills from Codex / Cursor / Copilot in *your own*
+> project is a separate flow: `tools/install.mjs` vendors `skills/` into a
+> target repo and injects a router block. See the "Installing (Codex,
+> Cursor, GitHub Copilot, other agents)" section of the README. This file
+> is only for editing the skills themselves.
+
 TV app development diverges hard from the web/mobile work most model
 training data covers: no DOM, no CSS, alien focus/remote-navigation models,
 brutal low-end hardware constraints, and a fragmented platform landscape
@@ -21,9 +27,14 @@ tv-dev-skills/
 │   └── <skill-name>/
 │       ├── SKILL.md         # frontmatter description controls triggering
 │       └── references/*.md  # loaded on demand, one file per sub-topic
+├── tools/
+│   └── install.mjs          # vendors skills/ + router block into a non-Claude project
 └── eval-workspace/
     └── <skill-name>/        # eval fixtures + benchmark runs, dev tooling only
 ```
+
+`package.json` exists only to expose `tools/install.mjs` as a `bin` for
+`npx github:rafaeltscs/tv-dev-skills`; it is not part of the plugin payload.
 
 Each skill is loaded on demand: when a prompt matches a skill's
 frontmatter `description`, Claude Code pulls in that `SKILL.md` (and only
@@ -80,6 +91,12 @@ such fields if content lives somewhere non-default.
 7. If the flat `skills/` listing ever gets hard to scan, consider category
    subfolders (`skills/frameworks/`, `skills/platform/`, etc.) — not worth
    it yet with four real skills and one placeholder.
+
+`tools/install.mjs` discovers skills from `skills/*/SKILL.md` and skips any
+whose description starts with `PLACEHOLDER`, so a new skill needs no
+installer change — it appears in consumers' router blocks on their next
+re-run. The router table shows the first sentence of each `description`;
+keep that sentence a self-contained summary of what the skill covers.
 
 ## Refreshing the local install after a content change
 

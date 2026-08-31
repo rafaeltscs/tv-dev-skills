@@ -1,0 +1,19 @@
+{
+  "name": "tv-dev-skills",
+  "version": "1.9.1",
+  "description": "TV/OTT development skills for Claude Code and other coding agents (Codex, Cursor, Copilot).",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "tv-dev-skills-install": "tools/install.mjs"
+  },
+  "files": [
+    "skills",
+    "tools"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rafaeltscs/tv-dev-skills.git"
+  },
+  "keywords": ["tv", "ott", "lightningjs", "typescript", "agent-skills"]
+}
