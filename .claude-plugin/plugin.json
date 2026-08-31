@@ -3,7 +3,7 @@
   "version": "1.9.1",
   "description": "Skills for TV/OTT app development: LightningJS conventions, remote-control focus/navigation, platform quirks, and performance constraints.",
   "author": {
-    "name": "Rafael"
+    "name": "Rafael Chiappetta"
   },
   "license": "MIT",
   "keywords": ["tv", "ott", "lightningjs", "typescript"]

@@ -1,7 +1,7 @@
 {
   "name": "tv-dev-skills",
   "owner": {
-    "name": "Rafael"
+    "name": "Rafael Chiappetta"
   },
   "description": "Skills for TV/OTT app development, as an installable Claude Code plugin.",
   "plugins": [
