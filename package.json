@@ -1,6 +1,6 @@
 {
   "name": "tv-dev-skills",
-  "version": "1.9.1",
+  "version": "0.1.0",
   "description": "TV/OTT development skills for Claude Code and other coding agents (Codex, Cursor, Copilot).",
   "license": "MIT",
   "type": "module",
