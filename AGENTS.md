@@ -90,7 +90,7 @@ such fields if content lives somewhere non-default.
    `lightningjs-v2-conventions/references/typescript.md`).
 7. If the flat `skills/` listing ever gets hard to scan, consider category
    subfolders (`skills/frameworks/`, `skills/platform/`, etc.) — not worth
-   it yet with four real skills and one placeholder.
+   it yet with five real skills and no placeholders.
 
 `tools/install.mjs` discovers skills from `skills/*/SKILL.md` and skips any
 whose description starts with `PLACEHOLDER`, so a new skill needs no
