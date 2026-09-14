@@ -113,6 +113,22 @@ TV apps (Roku, Android TV / Google TV Compose/Leanback), and the internals
 of the Android TV native shell beyond the WebView bridge are out of scope
 for this skill.
 
+The content in `skills/lightningjs-v3-conventions/` was written the same
+way, synthesizing publicly available documentation for LightningJS 3 /
+Blits:
+
+- Blits official documentation — https://lightningjs.io/v3-docs/blits/ (components, template syntax, reactive state/props/computed/watchers, user input, lifecycle events, built-in Layout/Text, transitions, router, file structure)
+- https://github.com/lightning-js/blits (Apache License 2.0), including its `index.d.ts` type declarations
+- The published `@lightningjs/blits` npm package metadata, for the current version and prop-syntax history (array vs. object props)
+
+No text was copied verbatim from those sources beyond short
+property/method names and minimal illustrative code patterns of the kind
+found in any Blits tutorial. No proprietary or employer-owned source code
+was used in producing this material. A few narrower corners of the API
+(multi-step/sequenced animation support, generic base-component typing)
+are flagged in the skill's own text as needing verification against the
+current framework version rather than stated as settled fact.
+
 If you fork or extend this repo with your own team's internal conventions,
 keep employer-specific code, credentials, asset paths, and business logic
 out of it — see the "Keeping this project-agnostic" section of
