@@ -17,9 +17,6 @@ and source repositories. See
 | [`tv-performance-constraints`](skills/tv-performance-constraints/) | **Ready** | Framework-agnostic performance rules for low-end TV hardware: texture memory budgets & the bytes-per-pixel math, GC pressure & allocation discipline, image sizing/decode/caching, lazy loading & virtualization of rails/grids. |
 | [`tv-platform-quirks`](skills/tv-platform-quirks/) | **Ready** | Per-platform quirks for web-based TV apps across six families — LG webOS, Samsung Tizen, VIZIO SmartCast, Amazon Fire TV (Fire OS), Comcast/RDK (Firebolt on WPE WebKit), Android TV / Google TV (WebView in a native shell): engine baseline, lifecycle/suspend events, pointer-vs-D-pad remote key codes (Back = 461 webOS / 10009 Tizen / native `onBackPressed` on Android TV / verify elsewhere; Tizen key registration), the Back/exit contract, adaptive streaming + DRM (webOS HLS-only + `luna://` DRM; Tizen AVPlay + DASH + `setDrm`; VIZIO/Fire TV/RDK/Android TV BYO MSE player + Widevine), and packaging + store review (`.ipk`/`ares-cli`/LG Seller Lounge; `.wgt`/Tizen Studio/Samsung Seller Office; VIZIO hosted-URL app; Fire TV Amazon WebView + Appstore + the Fire OS→Vega OS split; RDK Firebolt App Manifest + per-operator certification; Android TV `.aab` + `CATEGORY_LEANBACK_LAUNCHER` + Play TV app-quality review). |
 
-"Planned" skills are inert placeholders — they won't trigger and add no
-guidance yet.
-
 Each skill loads on demand: it enters context only when your prompt
 matches what that skill covers, so installing the plugin adds nothing to a
 session until a relevant task comes up.
