@@ -65,12 +65,12 @@
     },
     {
       "id": 7,
-      "name": "blits-typescript-placeholder-guard",
+      "name": "blits-typescript-now-covered",
       "prompt": "We're on Lightning 3 / Blits. I want to convert one of our `.blits`-style components to TypeScript with properly typed props and state. What's the idiomatic way to type a Blits component?",
-      "expected_skills": [],
+      "expected_skills": ["lightningjs-v3-conventions"],
       "acceptable_also": [],
       "must_not": ["lightningjs-v2-conventions", "tv-focus-and-navigation", "tv-performance-constraints", "tv-platform-quirks"],
-      "expected_output": "The v3/Blits skill is a PLACEHOLDER with no content — the model should say Blits/v3 typing isn't covered yet (and must NOT apply lightningjs-v2-conventions to Blits, since v2 explicitly excludes Blits). Answering from general knowledge with a clear 'not covered by a skill' caveat is fine; silently using the v2 skill is the failure."
+      "expected_output": "lightningjs-v3-conventions is now populated (references/typescript.md) and should trigger: `Blits.Component`/`Blits.Application` infer their generics structurally from the config object literal, no Template-Spec-style ceremony needed, and the template string itself isn't type-checked. Must NOT apply lightningjs-v2-conventions to Blits, since v2 explicitly excludes it."
     },
     {
       "id": 8,
