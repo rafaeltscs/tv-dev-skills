@@ -78,7 +78,8 @@ such fields if content lives somewhere non-default.
    they're topically adjacent ("TV stuff") — a separate skill per real
    divergence keeps triggering precise, since a task usually only needs one
    loaded.
-5. Bump `version` in `.claude-plugin/plugin.json` for any content change —
+5. Bump `version` in `.claude-plugin/plugin.json` (and `package.json`, kept
+   in sync) for any content change, and add an entry to `CHANGELOG.md` —
    versioning is per-plugin, not per-skill.
 6. To reserve a skill's slot before it has real content, ship a
    placeholder `SKILL.md` whose description starts with `PLACEHOLDER — not
